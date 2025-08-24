@@ -1,0 +1,54 @@
+{
+    "prompts": [
+      {
+        "id": 1,
+        "prompt": "Explain quantum computing in simple terms.",
+        "expected_tokens": 150
+      },
+      {
+        "id": 2,
+        "prompt": "Write a short story about a robot learning to paint.",
+        "expected_tokens": 200
+      },
+      {
+        "id": 3,
+        "prompt": "What are the main differences between Python and JavaScript?",
+        "expected_tokens": 180
+      },
+      {
+        "id": 4,
+        "prompt": "Describe the process of photosynthesis step by step.",
+        "expected_tokens": 160
+      },
+      {
+        "id": 5,
+        "prompt": "How does machine learning work?",
+        "expected_tokens": 140
+      },
+      {
+        "id": 6,
+        "prompt": "Write a recipe for chocolate chip cookies.",
+        "expected_tokens": 120
+      },
+      {
+        "id": 7,
+        "prompt": "Explain the theory of relativity in layman's terms.",
+        "expected_tokens": 170
+      },
+      {
+        "id": 8,
+        "prompt": "What are the benefits of renewable energy sources?",
+        "expected_tokens": 130
+      },
+      {
+        "id": 9,
+        "prompt": "Describe the water cycle and its importance.",
+        "expected_tokens": 145
+      },
+      {
+        "id": 10,
+        "prompt": "Write a brief history of the internet.",
+        "expected_tokens": 190
+      }
+    ]
+  }

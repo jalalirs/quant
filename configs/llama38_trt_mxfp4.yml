@@ -1,0 +1,26 @@
+interface:
+  type: server_openai
+  host: "0.0.0.0"
+  port: 8000
+  
+model:
+  model_name: meta-llama/Meta-Llama-3-8B-Instruct
+  cache_dir: "./model_cache"
+  max_length: 2048
+  max_batch_size: 1
+  conversion:
+    type: onnx
+    output_path: "./models/llama3.onnx"
+    quantization:
+      type: trt_mxfp4
+      precision: fp4
+      output_path: "./models/llama3.trt"
+      max_workspace_size: 4294967296  # 4GB
+
+client:
+  type: speed_benchmark
+  dataset: "dataset/speed_benchmark.json"
+  output: "results/llama38_mxfp4.json"
+  num_requests: 100
+  concurrent_requests: 1
+  warmup_requests: 5

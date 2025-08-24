@@ -1,0 +1,89 @@
+{
+    "configuration": {
+      "type": "speed_benchmark",
+      "dataset": "dataset/speed_benchmark.json",
+      "output": "results/llama38_fp16.json",
+      "num_requests": 100,
+      "concurrent_requests": 1,
+      "warmup_requests": 5,
+      "interface_config": {
+        "host": "localhost",
+        "port": 8000
+      }
+    },
+    "statistics": {
+      "total_requests": 100,
+      "successful_requests": 100,
+      "failed_requests": 0,
+      "success_rate": 100.0,
+      "latency_stats": {
+        "mean": 0.189,
+        "median": 0.185,
+        "min": 0.145,
+        "max": 0.285,
+        "std": 0.032,
+        "p50": 0.185,
+        "p90": 0.225,
+        "p95": 0.245,
+        "p99": 0.275
+      },
+      "throughput_stats": {
+        "mean_tokens_per_second": 82.5,
+        "median_tokens_per_second": 84.2,
+        "total_tokens_generated": 8250,
+        "total_time": 18.9
+      }
+    },
+    "detailed_results": [
+      {
+        "prompt_id": 1,
+        "prompt": "Explain quantum computing in simple terms.",
+        "response": "Quantum computing harnesses quantum mechanical phenomena like superposition and entanglement to process information...",
+        "latency": 0.175,
+        "tokens_generated": 68,
+        "tokens_per_second": 85.7,
+        "success": true,
+        "error_message": null
+      },
+      {
+        "prompt_id": 2,
+        "prompt": "Write a short story about a robot learning to paint.",
+        "response": "Unit 42-B had calculated trajectories for missiles and optimized supply chains, but art remained an enigma...",
+        "latency": 0.195,
+        "tokens_generated": 85,
+        "tokens_per_second": 81.3,
+        "success": true,
+        "error_message": null
+      },
+      {
+        "prompt_id": 3,
+        "prompt": "What are the main differences between Python and JavaScript?",
+        "response": "Python and JavaScript differ in several key areas: syntax, execution environment, typing system, and primary use cases...",
+        "latency": 0.168,
+        "tokens_generated": 75,
+        "tokens_per_second": 89.3,
+        "success": true,
+        "error_message": null
+      },
+      {
+        "prompt_id": 4,
+        "prompt": "Describe the process of photosynthesis step by step.",
+        "response": "Photosynthesis occurs in two main stages: light-dependent reactions and the Calvin cycle...",
+        "latency": 0.203,
+        "tokens_generated": 82,
+        "tokens_per_second": 78.4,
+        "success": true,
+        "error_message": null
+      },
+      {
+        "prompt_id": 5,
+        "prompt": "How does machine learning work?",
+        "response": "Machine learning algorithms identify patterns in data to make predictions or decisions without explicit programming...",
+        "latency": 0.158,
+        "tokens_generated": 63,
+        "tokens_per_second": 91.8,
+        "success": true,
+        "error_message": null
+      }
+    ]
+  }

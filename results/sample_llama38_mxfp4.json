@@ -1,0 +1,89 @@
+{
+    "configuration": {
+      "type": "speed_benchmark",
+      "dataset": "dataset/speed_benchmark.json",
+      "output": "results/llama38_mxfp4.json",
+      "num_requests": 100,
+      "concurrent_requests": 1,
+      "warmup_requests": 5,
+      "interface_config": {
+        "host": "localhost",
+        "port": 8000
+      }
+    },
+    "statistics": {
+      "total_requests": 100,
+      "successful_requests": 98,
+      "failed_requests": 2,
+      "success_rate": 98.0,
+      "latency_stats": {
+        "mean": 0.245,
+        "median": 0.235,
+        "min": 0.180,
+        "max": 0.420,
+        "std": 0.045,
+        "p50": 0.235,
+        "p90": 0.290,
+        "p95": 0.315,
+        "p99": 0.380
+      },
+      "throughput_stats": {
+        "mean_tokens_per_second": 65.2,
+        "median_tokens_per_second": 68.1,
+        "total_tokens_generated": 6520,
+        "total_time": 24.5
+      }
+    },
+    "detailed_results": [
+      {
+        "prompt_id": 1,
+        "prompt": "Explain quantum computing in simple terms.",
+        "response": "Quantum computing is a revolutionary approach to processing information that leverages the strange principles of quantum mechanics...",
+        "latency": 0.235,
+        "tokens_generated": 65,
+        "tokens_per_second": 67.2,
+        "success": true,
+        "error_message": null
+      },
+      {
+        "prompt_id": 2,
+        "prompt": "Write a short story about a robot learning to paint.",
+        "response": "In a small workshop filled with mechanical parts and the smell of oil, R-7 stood before an easel for the first time...",
+        "latency": 0.268,
+        "tokens_generated": 78,
+        "tokens_per_second": 64.8,
+        "success": true,
+        "error_message": null
+      },
+      {
+        "prompt_id": 3,
+        "prompt": "What are the main differences between Python and JavaScript?",
+        "response": "Python and JavaScript are both popular programming languages, but they serve different purposes and have distinct characteristics...",
+        "latency": 0.220,
+        "tokens_generated": 72,
+        "tokens_per_second": 69.1,
+        "success": true,
+        "error_message": null
+      },
+      {
+        "prompt_id": 4,
+        "prompt": "Describe the process of photosynthesis step by step.",
+        "response": "",
+        "latency": 0.180,
+        "tokens_generated": 0,
+        "tokens_per_second": 0,
+        "success": false,
+        "error_message": "Request timeout"
+      },
+      {
+        "prompt_id": 5,
+        "prompt": "How does machine learning work?",
+        "response": "Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience...",
+        "latency": 0.195,
+        "tokens_generated": 58,
+        "tokens_per_second": 71.8,
+        "success": true,
+        "error_message": null
+      }
+    ]
+  }

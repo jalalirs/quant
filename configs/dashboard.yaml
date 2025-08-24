@@ -1,0 +1,60 @@
+# Dashboard generation configuration
+type: dashboard
+
+dashboard:
+  title: "Model Performance Comparison Dashboard"
+  description: "Comprehensive analysis of quantized model performance across different configurations"
+  output_file: "results/dashboard.html"
+  
+  # Benchmark result files to include
+  benchmark_files:
+    - path: "results/sample_llama38_mxfp4.json"
+      label: "Llama3-8B MXFP4"
+      color: "#FF6B6B"
+      description: "Llama3 8B with MXFP4 quantization"
+      
+    - path: "results/sample_llama38_fp16.json"
+      label: "Llama3-8B FP16"
+      color: "#4ECDC4"
+      description: "Llama3 8B with FP16 precision"
+      
+  
+  # Charts configuration
+  charts:
+    - type: "latency_comparison"
+      title: "Response Latency Comparison"
+      description: "Average response latency across different models and quantization methods"
+      show_percentiles: true
+      
+    - type: "throughput_comparison"
+      title: "Token Generation Throughput"
+      description: "Tokens per second generation speed"
+      
+    - type: "latency_distribution"
+      title: "Latency Distribution"
+      description: "Distribution of response latencies"
+      
+    - type: "success_rate"
+      title: "Success Rate Analysis"
+      description: "Request success rates and error analysis"
+      
+    - type: "detailed_metrics"
+      title: "Detailed Performance Metrics"
+      description: "Comprehensive performance breakdown"
+
+  # Styling options
+  theme:
+    primary_color: "#2C3E50"
+    secondary_color: "#3498DB"
+    accent_color: "#E74C3C"
+    background_color: "#FFFFFF"
+    text_color: "#2C3E50"
+    font_family: "Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+    
+  # Export options
+  export:
+    include_raw_data: true
+    include_summary_table: true
+    include_methodology: true
+    responsive_design: true
+    auto_refresh: false
