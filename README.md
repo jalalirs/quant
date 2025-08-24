@@ -61,7 +61,7 @@ The pipeline is configured using YAML files. Here's the structure:
 interface:
   type: server_openai    # Interface type
   host: "0.0.0.0"       # Server host
-  port: 8000            # Server port
+  port: 6001            # Server port
   
 model:
   model_name: meta-llama/Meta-Llama-3-8B-Instruct
@@ -103,7 +103,7 @@ Once the server is running, you can use it with OpenAI-compatible clients:
 import openai
 
 client = openai.OpenAI(
-    base_url="http://localhost:8000/v1",
+    base_url="http://localhost:6001/v1",
     api_key="dummy"
 )
 

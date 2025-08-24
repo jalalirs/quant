@@ -1,0 +1,111 @@
+services:
+  # Dashboard-only service
+  dashboard:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dashboard
+    container_name: quant-dashboard
+    volumes:
+      - ../results:/app/results
+      - ../configs:/app/configs
+
+    environment:
+      - DASHBOARD_ONLY=1
+    command: ["python", "quant.py", "--config", "configs/dashboard_generation.yml"]
+    restart: "no"
+    
+  # CPU-only LLM pipeline (server mode - no benchmarking)
+  llm-cpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.llm-cpu
+    container_name: quant-llm-cpu
+    volumes:
+      - ../models:/app/models
+      - ../model_cache:/app/model_cache
+      - ../results:/app/results
+      - ../configs:/app/configs
+    ports:
+      - "6001:6001"
+    environment:
+      - CUDA_VISIBLE_DEVICES=""
+      - OMP_NUM_THREADS=4
+    # Use server-only config to prevent restart loop
+    command: ["python", "quant.py", "--config", "configs/llama38_cpu_only.yml"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6001/health"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 180s  # Increased start period for model loading
+      
+  # CPU benchmark runner (separate service)
+  llm-cpu-benchmark:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.llm-cpu
+    container_name: quant-llm-cpu-benchmark
+    volumes:
+      - ../models:/app/models
+      - ../model_cache:/app/model_cache
+      - ../results:/app/results
+      - ../configs:/app/configs
+    environment:
+      - CUDA_VISIBLE_DEVICES=""
+      - OMP_NUM_THREADS=4
+    # Use benchmark config
+    command: ["python", "quant.py", "--config", "configs/llama38_cpu_benchmark.yml"]
+    profiles: ["benchmark"]  # Only start when explicitly requested
+    depends_on:
+      - llm-cpu
+    
+  # GPU-enabled LLM pipeline
+  llm-gpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.llm-gpu
+    container_name: quant-llm-gpu
+    volumes:
+      - ../models:/app/models
+      - ../model_cache:/app/model_cache
+      - ../results:/app/results
+      - ../configs:/app/configs
+    ports:
+      - "6002:6001"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    command: ["python", "quant.py", "--config", "configs/llama38_trt_mxfp4.yml"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6001/health"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 300s
+    profiles: ["gpu"]  # Only start when GPU profile is requested
+
+  # File server for results
+  file-server:
+    image: nginx:alpine
+    container_name: quant-files
+    volumes:
+      - ../results:/usr/share/nginx/html/results
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+    depends_on:
+      - dashboard
+
+networks:
+  default:
+    name: quant-network

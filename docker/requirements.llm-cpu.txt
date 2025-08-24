@@ -1,15 +1,15 @@
-# Core ML dependencies
+# CPU-only LLM pipeline requirements
+# No CUDA or TensorRT dependencies
+
+# Core ML dependencies (CPU versions)
 torch>=2.0.0
 transformers>=4.30.0
 tokenizers>=0.13.0
+accelerate>=0.20.0
 
-# ONNX dependencies
+# ONNX dependencies (CPU version)
 onnx>=1.14.0
-onnxruntime-gpu>=1.15.0
-
-# TensorRT - conditional installation based on CUDA availability
-# Install with: pip install tensorrt-cu11 (for CUDA 11.x) or tensorrt-cu12 (for CUDA 12.x)
-# Or use the install script: python install_tensorrt.py
+onnxruntime>=1.15.0
 
 # Server dependencies
 fastapi>=0.100.0
@@ -25,6 +25,12 @@ PyYAML>=6.0
 numpy>=1.24.0
 packaging>=21.0
 
+# Dashboard dependencies
+Jinja2>=3.1.0
+
 # Optional: for better logging and progress bars
 tqdm>=4.65.0
 rich>=13.0.0
+
+# Hugging Face hub
+huggingface_hub>=0.16.0

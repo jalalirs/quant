@@ -6,15 +6,28 @@ import os
 import logging
 from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
+logger = logging.getLogger(__name__)
 
 # Import all submodules
-from .convertor import ONNXConverter
-from .trt import MXFp4Quantizer
-from .interface import ServerOpenAI
-from .client import SpeedBenchmarkClient
+try:
+    from .convertor import ONNXConverter
+except ImportError:
+    logger.warning("TensorRT not found, MXFP4 quantization will not be available")
+try:
+    from .trt import MXFp4Quantizer
+except ImportError:
+    logger.warning("TensorRT not found, MXFP4 quantization will not be available")
+try:
+    from .interface import ServerOpenAI
+except ImportError:
+    logger.warning("ServerOpenAI not found, server interface will not be available")
+try:
+    from .client import SpeedBenchmarkClient
+except ImportError:
+    logger.warning("SpeedBenchmarkClient not found, speed benchmark client will not be available")
 from .dashboard import DashboardRenderer
 
-logger = logging.getLogger(__name__)
+
 
 class BaseQuant(ABC):
     """Base class for quantization pipelines"""
@@ -35,12 +48,17 @@ class BaseQuant(ABC):
         # Determine pipeline type from configuration
         pipeline_type = config.get('type', 'standard')
         
+        logger.info(f"Detected pipeline type: {pipeline_type}")
+        
         if pipeline_type == 'dashboard':
+            logger.info("Loading dashboard pipeline...")
             return QuantDashboard.load_from_dict(config)
         elif pipeline_type == 'server_benchmark':
+            logger.info("Loading server benchmark pipeline...")
             return QuantServerBenchmark.load_from_dict(config)
         else:
             # Default to standard Quant pipeline
+            logger.info("Loading standard quantization pipeline...")
             return Quant.load_from_dict(config)
     
     @abstractmethod
@@ -105,8 +123,8 @@ class Quant(BaseQuant):
         
         if interface_type == 'server_openai':
             self.interface = ServerOpenAI.load_from_dict({
-                **self.model_config,
-                **self.interface_config,
+                **self.interface_config,  # Pass interface config first
+                **self.model_config,      # Then model config
                 'quantizer': self.quantizer
             })
         else:

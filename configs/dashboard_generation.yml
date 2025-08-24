@@ -17,7 +17,12 @@ dashboard:
       label: "Llama3-8B FP16"
       color: "#4ECDC4"
       description: "Llama3 8B with FP16 precision"
-      
+    
+    - path: "results/cpu_benchmark.json"
+      label: "GPT2 CPU"
+      color: "#4ECDC4"
+      description: "GPT2 with CPU"
+
   
   # Charts configuration
   charts:

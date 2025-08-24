@@ -1,0 +1,55 @@
+# CPU-only LLM pipeline container
+# For systems without CUDA or for development/testing
+
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    wget \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create requirements file for CPU-only LLM pipeline
+COPY docker/requirements.llm-cpu.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY quant/ quant/
+COPY configs/ configs/
+COPY dataset/ dataset/
+COPY quant.py .
+COPY install_tensorrt.py .
+
+# Create necessary directories
+RUN mkdir -p results models model_cache
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV CUDA_VISIBLE_DEVICES=""
+ENV OMP_NUM_THREADS=4
+ENV MKL_NUM_THREADS=4
+
+# Expose port for API server
+EXPOSE 6001
+
+# Default command - Server-only mode (no benchmarking to prevent restart loop)
+CMD ["python", "quant.py", "--config", "configs/llama38_cpu_benchmark.yml"]
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=30s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:6001/health || exit 1
+
+# Labels
+LABEL maintainer="quant-team"
+LABEL description="CPU-only LLM quantization and inference pipeline"
+LABEL version="1.0"
+LABEL usage="docker run -p 6001:6001 -v $(pwd)/models:/app/models quant-llm-cpu"
+
+# Volumes for persistent data
+VOLUME ["/app/models", "/app/model_cache", "/app/results", "/app/configs"]

@@ -1,0 +1,52 @@
+# Dashboard-only Docker container
+# Lightweight container for generating comparison dashboards from benchmark results
+# No CUDA, ONNX, or TensorRT dependencies required
+
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create requirements file for dashboard-only mode
+COPY docker/requirements.dashboard.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy only necessary files for dashboard
+COPY quant/__init__.py quant/
+COPY quant/dashboard/ quant/dashboard/
+COPY configs/ configs/
+COPY results/ results/
+COPY dataset/ dataset/
+COPY quant.py .
+
+# Create results directory
+RUN mkdir -p results
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV DASHBOARD_ONLY=1
+
+# Expose port for optional file serving
+EXPOSE 8080
+
+# Default command
+CMD ["python", "quant.py", "--config", "configs/dashboard_generation.yml"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import quant.dashboard; print('Dashboard module healthy')" || exit 1
+
+# Labels
+LABEL maintainer="quant-team"
+LABEL description="Lightweight dashboard generator for model benchmark comparison"
+LABEL version="1.0"
+LABEL usage="docker run -v $(pwd)/results:/app/results -v $(pwd)/configs:/app/configs quant-dashboard"
+
+# Volume for results and configs
+VOLUME ["/app/results", "/app/configs"]

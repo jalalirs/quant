@@ -1,0 +1,20 @@
+# Minimal requirements for dashboard-only container
+# No CUDA, ONNX, TensorRT, or ML model dependencies
+
+# Core Python utilities
+PyYAML>=6.0
+numpy>=1.24.0
+
+# Template engine for HTML generation
+Jinja2>=3.1.0
+
+# Optional: Better logging and progress
+rich>=13.0.0
+tqdm>=4.65.0
+
+# Optional: Static file serving
+uvicorn[standard]>=0.22.0
+fastapi>=0.100.0
+
+# JSON processing
+packaging>=21.0

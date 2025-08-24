@@ -8,7 +8,7 @@
       "warmup_requests": 5,
       "interface_config": {
         "host": "localhost",
-        "port": 8000
+        "port": 6001
       }
     },
     "statistics": {

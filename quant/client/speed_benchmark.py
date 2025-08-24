@@ -41,7 +41,7 @@ class SpeedBenchmarkClient:
         # Interface configuration
         interface_config = config.get('interface_config', {})
         self.host = interface_config.get('host', 'localhost')
-        self.port = interface_config.get('port', 8000)
+        self.port = interface_config.get('port', 6001)
         self.base_url = f"http://{self.host}:{self.port}/v1"
         
         # Load dataset

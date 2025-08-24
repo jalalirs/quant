@@ -1,3 +1,6 @@
+# CPU-only configuration for Docker containers
+# No TensorRT quantization - uses ONNX runtime only
+
 interface:
   type: server_openai
   host: "0.0.0.0"
@@ -17,16 +20,9 @@ model:
       input_names: ["input_ids"]
       output_names: ["logits"]
       export_sequence_length: 1024  # Use GPT-2's full context length for ONNX export
-    quantization:
-      type: trt_mxfp4
-      precision: fp4
-      output_path: "./models/llama3.trt"
-      max_workspace_size: 4294967296  # 4GB
-
-client:
-  type: speed_benchmark
-  dataset: "dataset/speed_benchmark.json"
-  output: "results/llama38_mxfp4.json"
-  num_requests: 100
-  concurrent_requests: 1
-  warmup_requests: 5
+  
+  # Generation settings
+  generation:
+    max_new_tokens: 50      # Maximum tokens to generate
+    temperature: 0.7        # Sampling temperature
+    top_k: 50              # Top-k sampling

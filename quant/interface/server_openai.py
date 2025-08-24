@@ -40,7 +40,7 @@ class ServerOpenAI:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.host = config.get('host', '0.0.0.0')
-        self.port = config.get('port', 8000)
+        self.port = config.get('port', 6001)
         self.model_name = config.get('model_name', 'llama3-trt')
         
         # Get quantizer from config

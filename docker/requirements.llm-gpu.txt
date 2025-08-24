@@ -1,0 +1,45 @@
+# Full GPU-enabled LLM pipeline requirements
+# Includes CUDA-enabled packages for maximum performance
+
+# Core ML dependencies (CUDA versions)
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+transformers>=4.30.0
+tokenizers>=0.13.0
+
+# ONNX dependencies (GPU version)
+onnx>=1.14.0
+onnxruntime-gpu>=1.15.0
+
+# Note: TensorRT installed separately in Dockerfile based on CUDA version
+
+# Server dependencies
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+pydantic>=2.0.0
+
+# Client dependencies
+openai>=1.0.0
+aiohttp>=3.8.0
+
+# Utility dependencies
+PyYAML>=6.0
+numpy>=1.24.0
+packaging>=21.0
+
+# Dashboard dependencies
+Jinja2>=3.1.0
+
+# CUDA utilities
+nvidia-ml-py>=12.535.0
+
+# Optional: for better logging and progress bars
+tqdm>=4.65.0
+rich>=13.0.0
+
+# Hugging Face hub
+huggingface_hub>=0.16.0
+
+# Accelerate for multi-GPU support
+accelerate>=0.20.0

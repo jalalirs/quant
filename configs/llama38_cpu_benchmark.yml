@@ -1,3 +1,6 @@
+# CPU-only configuration with benchmarking
+# Separate config for running benchmarks
+
 interface:
   type: server_openai
   host: "0.0.0.0"
@@ -17,16 +20,11 @@ model:
       input_names: ["input_ids"]
       output_names: ["logits"]
       export_sequence_length: 1024  # Use GPT-2's full context length for ONNX export
-    quantization:
-      type: trt_mxfp4
-      precision: fp4
-      output_path: "./models/llama3.trt"
-      max_workspace_size: 4294967296  # 4GB
 
 client:
   type: speed_benchmark
-  dataset: "dataset/speed_benchmark.json"
-  output: "results/llama38_mxfp4.json"
-  num_requests: 100
-  concurrent_requests: 1
-  warmup_requests: 5
+  dataset: "dataset/speed_benchmark_cpu.json"
+  output: "results/cpu_benchmark.json"
+  num_requests: 10        # Fewer requests for CPU testing
+  concurrent_requests: 1  # No concurrency on CPU
+  warmup_requests: 2      # Minimal warmup
