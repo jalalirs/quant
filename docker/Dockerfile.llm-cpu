@@ -24,7 +24,6 @@ COPY quant/ quant/
 COPY configs/ configs/
 COPY dataset/ dataset/
 COPY quant.py .
-COPY install_tensorrt.py .
 
 # Create necessary directories
 RUN mkdir -p results models model_cache
