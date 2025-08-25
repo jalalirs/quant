@@ -60,7 +60,7 @@ services:
     depends_on:
       - llm-cpu
     
-  # GPU-enabled LLM pipeline
+  # GPU-enabled LLM pipeline (server mode)
   llm-gpu:
     build:
       context: ..
@@ -71,13 +71,11 @@ services:
       - ../model_cache:/app/model_cache
       - ../results:/app/results
       - ../configs:/app/configs
-    ports:
-      - "6002:6001"
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     command: ["python", "quant.py", "--config", "configs/llama38_trt_mxfp4.yml"]
-    restart: unless-stopped
+    restart: no
     deploy:
       resources:
         reservations:
@@ -85,13 +83,32 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6001/health"]
-      interval: 60s
-      timeout: 30s
-      retries: 3
-      start_period: 300s
     profiles: ["gpu"]  # Only start when GPU profile is requested
+    
+  # GPU benchmark runner (single run and exit)
+  llm-gpu-benchmark:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.llm-gpu
+    container_name: quant-llm-gpu-benchmark
+    volumes:
+      - ../models:/app/models
+      - ../model_cache:/app/model_cache
+      - ../results:/app/results
+      - ../configs:/app/configs
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    command: ["python", "quant.py", "--config", "configs/llama38_gpu_benchmark.yml"]
+    restart: "no"  # Single run only
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles: ["gpu-benchmark"]  # Only start when GPU benchmark profile is requested
 
   # GPT-OSS-20B Standard Benchmark (MoE kernels, no mxfp4)
   gpt-oss-standard:

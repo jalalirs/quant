@@ -22,11 +22,3 @@ model:
       precision: fp4
       output_path: "./models/llama3.trt"
       max_workspace_size: 4294967296  # 4GB
-
-client:
-  type: speed_benchmark
-  dataset: "dataset/speed_benchmark.json"
-  output: "results/llama38_mxfp4.json"
-  num_requests: 100
-  concurrent_requests: 1
-  warmup_requests: 5
