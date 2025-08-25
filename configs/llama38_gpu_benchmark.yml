@@ -1,0 +1,32 @@
+interface:
+  type: server_openai
+  host: "0.0.0.0"
+  port: 6001
+  
+model:
+  model_name: gpt2  # Simple GPT-2 model for better ONNX compatibility
+  cache_dir: "./model_cache"
+  max_batch_size: 1       # Single batch for CPU
+  conversion:
+    type: onnx
+    output_path: "./models/model_cpu.onnx"
+    # ONNX export settings
+    onnx_export:
+      opset_version: 14     # Lower opset version for better compatibility
+      use_dynamic_axes: true # Let model determine its own shapes
+      input_names: ["input_ids"]
+      output_names: ["logits"]
+      export_sequence_length: 1024  # Use GPT-2's full context length for ONNX export
+    quantization:
+      type: trt_mxfp4
+      precision: fp4
+      output_path: "./models/llama3.trt"
+      max_workspace_size: 4294967296  # 4GB
+
+client:
+  type: speed_benchmark
+  dataset: "dataset/speed_benchmark.json"
+  output: "results/llama38_mxfp4.json"
+  num_requests: 100
+  concurrent_requests: 1
+  warmup_requests: 5
