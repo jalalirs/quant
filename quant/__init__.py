@@ -25,6 +25,14 @@ try:
     from .client import SpeedBenchmarkClient
 except ImportError:
     logger.warning("SpeedBenchmarkClient not found, speed benchmark client will not be available")
+try:
+    from .loaders import OptimizedModelLoader
+except ImportError:
+    logger.warning("OptimizedModelLoader not found, optimized loading will not be available")
+try:
+    from .utils import GPUCompatibilityChecker
+except ImportError:
+    logger.warning("GPUCompatibilityChecker not found, compatibility checking will not be available")
 from .dashboard import DashboardRenderer
 
 
@@ -103,19 +111,26 @@ class Quant(BaseQuant):
             raise ValueError(f"Unknown converter type: {converter_type}")
     
     def _initialize_quantizer(self):
-        """Initialize quantizer"""
-        conversion_config = self.model_config.get('conversion', {})
-        quantization_config = conversion_config.get('quantization', {})
-        quantizer_type = quantization_config.get('type', 'trt_mxfp4')
+        """Initialize quantizer or optimized loader"""
+        loader_type = self.model_config.get('loader_type', 'quantizer')
         
-        if quantizer_type == 'trt_mxfp4':
-            self.quantizer = MXFp4Quantizer.load_from_dict({
-                **self.model_config,
-                **conversion_config,
-                **quantization_config
-            })
+        if loader_type == 'optimized_loader':
+            # Use the new optimized loader for direct model loading
+            self.quantizer = OptimizedModelLoader.load_from_dict(self.model_config)
         else:
-            raise ValueError(f"Unknown quantizer type: {quantizer_type}")
+            # Use traditional quantizer pipeline
+            conversion_config = self.model_config.get('conversion', {})
+            quantization_config = conversion_config.get('quantization', {})
+            quantizer_type = quantization_config.get('type', 'trt_mxfp4')
+            
+            if quantizer_type == 'trt_mxfp4':
+                self.quantizer = MXFp4Quantizer.load_from_dict({
+                    **self.model_config,
+                    **conversion_config,
+                    **quantization_config
+                })
+            else:
+                raise ValueError(f"Unknown quantizer type: {quantizer_type}")
     
     def _initialize_interface(self):
         """Initialize serving interface"""
@@ -148,13 +163,21 @@ class Quant(BaseQuant):
         """Run the complete quantization pipeline"""
         logger.info("Starting quantization pipeline...")
         
-        # Step 1: Convert model
-        logger.info("Converting model...")
-        self.converter.convert()
+        loader_type = self.model_config.get('loader_type', 'quantizer')
         
-        # Step 2: Quantize model
-        logger.info("Quantizing model...")
-        self.quantizer.quantize(self.converter.output_path)
+        if loader_type == 'optimized_loader':
+            # Direct model loading with optimizations
+            logger.info("Loading model with optimizations...")
+            self.quantizer.load_model()
+        else:
+            # Traditional quantization pipeline
+            # Step 1: Convert model
+            logger.info("Converting model...")
+            self.converter.convert()
+            
+            # Step 2: Quantize model
+            logger.info("Quantizing model...")
+            self.quantizer.quantize(self.converter.output_path)
         
         # Step 3: Start interface (if needed)
         if self.client is not None:
