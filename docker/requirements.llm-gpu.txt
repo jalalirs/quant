@@ -1,10 +1,8 @@
 # Full GPU-enabled LLM pipeline requirements
 # Includes CUDA-enabled packages for maximum performance
 
-# Core ML dependencies (CUDA versions) - compatible with MegaBlocks
-torch==2.7.0
-torchvision==0.22.0
-torchaudio==2.7.0
+# Core ML dependencies - PyTorch pre-installed in NVIDIA PyTorch container
+# torch, torchvision, torchaudio should be pre-installed
 transformers>=4.55.1
 tokenizers>=0.13.0
 

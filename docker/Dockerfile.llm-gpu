@@ -1,7 +1,7 @@
 # Full-featured GPU-enabled LLM pipeline container
 # Includes CUDA, TensorRT, and all quantization capabilities
 
-FROM nvcr.io/nvidia/tensorrt:24.12-py3
+FROM nvcr.io/nvidia/pytorch:24.12-py3
 
 # Set working directory
 WORKDIR /app
@@ -20,8 +20,13 @@ RUN apt-get update && apt-get install -y \
 
 # Python symlink already exists in TensorRT base image
 
-# Upgrade pip
+# Upgrade pip and check pre-installed packages
 RUN pip install --upgrade pip
+
+# Check what's pre-installed in PyTorch container
+RUN python -c "import torch; print(f'PyTorch version: {torch.__version__}')" || echo "PyTorch not pre-installed"
+RUN python -c "import triton; print(f'Triton version: {triton.__version__}')" || echo "Triton not pre-installed"  
+RUN python -c "import tensorrt; print(f'TensorRT version: {tensorrt.__version__}')" || echo "TensorRT not pre-installed"
 
 # Copy and install requirements
 COPY docker/requirements.llm-gpu.txt requirements.txt
