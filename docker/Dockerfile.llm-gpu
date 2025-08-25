@@ -18,8 +18,7 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Create symlinks for python
-RUN ln -s /usr/bin/python3 /usr/bin/python
+# Python symlink already exists in TensorRT base image
 
 # Upgrade pip
 RUN pip install --upgrade pip
