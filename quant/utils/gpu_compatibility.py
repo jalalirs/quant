@@ -129,6 +129,56 @@ class GPUCompatibilityChecker:
         else:
             return "standard"
     
+    def get_pre_quantized_optimization_config(self) -> Dict:
+        """Get optimization configuration for pre-quantized models (e.g., NVIDIA FP4 models)"""
+        strategy = self.compatibility_report["recommended_optimization"]
+        
+        # For pre-quantized models, we don't apply additional quantization
+        # but we can still use other optimizations
+        configs = {
+            "mxfp4_with_flash_attention": {
+                "use_mxfp4": False,  # Already quantized
+                "use_flash_attention_3": True,
+                "use_megablocks_moe": True,
+                "use_kernels": True,
+                "torch_dtype": "auto",
+                "device_map": "auto",
+                "trust_remote_code": True,
+                "low_cpu_mem_usage": True
+            },
+            "mxfp4_only": {
+                "use_mxfp4": False,  # Already quantized
+                "use_flash_attention_3": False,
+                "use_megablocks_moe": True,
+                "use_kernels": True,
+                "torch_dtype": "auto",
+                "device_map": "auto",
+                "trust_remote_code": True,
+                "low_cpu_mem_usage": True
+            },
+            "megablocks_moe": {
+                "use_mxfp4": False,  # Already quantized
+                "use_flash_attention_3": False,
+                "use_megablocks_moe": True,
+                "use_kernels": True,
+                "torch_dtype": "auto",
+                "device_map": "auto",
+                "trust_remote_code": True,
+                "low_cpu_mem_usage": True
+            },
+            "standard": {
+                "use_mxfp4": False,  # Already quantized
+                "use_flash_attention_3": False,
+                "use_megablocks_moe": False,
+                "torch_dtype": "auto",
+                "device_map": "auto",
+                "trust_remote_code": True,
+                "low_cpu_mem_usage": True
+            }
+        }
+        
+        return configs.get(strategy, configs["standard"])
+    
     def get_optimization_config(self) -> Dict:
         """Get optimization configuration based on GPU compatibility"""
         strategy = self.compatibility_report["recommended_optimization"]

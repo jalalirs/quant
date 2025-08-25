@@ -52,11 +52,17 @@ pip install tensorrt-cu12
 - **MegaBlocks MoE kernels** for efficient MoE model inference (~48GB VRAM)
 - **Fail-fast approach** - no fallbacks, clear error messages when requirements aren't met
 
-### 📊 GPT-OSS-20B Benchmarking
+### 📊 Model Benchmarking
+**GPT-OSS-20B**: 
 - Specialized benchmarks for `openai/gpt-oss-20b` model
 - Compare performance with and without mxfp4 quantization
 - MoE kernel optimization for speed improvements
-- Comprehensive statistics and failure analysis
+
+**NVIDIA Llama-4-Scout-17B-FP4**:
+- Pre-quantized FP4 model from NVIDIA
+- MoE architecture with 16 experts
+- Long context support (up to 1M tokens)
+- Optimized for single H100 or similar GPU
 
 ## Usage
 
@@ -70,6 +76,10 @@ docker-compose --profile gpu-check up gpu-compatibility-check
 docker-compose --profile gpt-oss-benchmark up gpt-oss-standard    # Best performance
 docker-compose --profile gpt-oss-benchmark up gpt-oss-moe-only   # MoE only
 docker-compose --profile gpt-oss-benchmark up gpt-oss-mxfp4      # mxfp4 (broken)
+
+# Run NVIDIA Llama-4-Scout benchmarks (pre-quantized FP4)
+docker-compose --profile llama4-scout-benchmark up llama4-scout-fp4       # Standard
+docker-compose --profile llama4-scout-benchmark up llama4-scout-fp4-long  # Long context
 ```
 
 ### Basic Usage

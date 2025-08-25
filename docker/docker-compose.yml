@@ -185,6 +185,56 @@ services:
     profiles: ["gpt-oss-benchmark"]
     restart: "no"  # Run once for benchmarking
 
+  # NVIDIA Llama-4-Scout-17B-FP4 Benchmark
+  llama4-scout-fp4:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.llm-gpu
+    container_name: quant-llama4-scout-fp4
+    volumes:
+      - ../models:/app/models
+      - ../model_cache:/app/model_cache
+      - ../results:/app/results
+      - ../configs:/app/configs
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    command: ["python", "quant.py", "--config", "configs/llama4_scout_17b_fp4.yml", "--verbose"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles: ["llama4-scout-benchmark"]
+    restart: "no"  # Run once for benchmarking
+
+  # NVIDIA Llama-4-Scout-17B-FP4 Long Context Benchmark
+  llama4-scout-fp4-long:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.llm-gpu
+    container_name: quant-llama4-scout-fp4-long
+    volumes:
+      - ../models:/app/models
+      - ../model_cache:/app/model_cache
+      - ../results:/app/results
+      - ../configs:/app/configs
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    command: ["python", "quant.py", "--config", "configs/llama4_scout_17b_fp4_long_context.yml", "--verbose"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles: ["llama4-scout-benchmark"]
+    restart: "no"  # Run once for benchmarking
+
   # GPU Compatibility Checker
   gpu-compatibility-check:
     build:

@@ -47,8 +47,15 @@ docker-compose --profile gpt-oss-benchmark up gpt-oss-standard    # MoE kernels 
 docker-compose --profile gpt-oss-benchmark up gpt-oss-moe-only   # MoE kernels only
 docker-compose --profile gpt-oss-benchmark up gpt-oss-mxfp4      # mxfp4 (expected to fail)
 
+# NVIDIA Llama-4-Scout-17B-FP4 Benchmarking (pre-quantized)
+docker-compose --profile llama4-scout-benchmark up llama4-scout-fp4       # Standard benchmark
+docker-compose --profile llama4-scout-benchmark up llama4-scout-fp4-long  # Long context test
+
 # Run all GPT-OSS benchmarks sequentially
 docker-compose --profile gpt-oss-benchmark up
+
+# Run all Llama-4-Scout benchmarks sequentially
+docker-compose --profile llama4-scout-benchmark up
 ```
 
 ### Manual Docker Commands
@@ -124,10 +131,20 @@ docker-compose --profile gpt-oss-benchmark up gpt-oss-moe-only
 docker-compose --profile gpt-oss-benchmark up gpt-oss-mxfp4
 ```
 
+### NVIDIA Llama-4-Scout-17B-FP4 Benchmarking
+Pre-quantized NVIDIA model with MoE architecture:
+
+```bash
+# Standard benchmark with pre-quantized FP4 weights
+docker-compose --profile llama4-scout-benchmark up llama4-scout-fp4
+
+# Long context capability testing (up to 1M tokens support)
+docker-compose --profile llama4-scout-benchmark up llama4-scout-fp4-long
+```
+
 Results will be saved to:
-- `results/gpt_oss_20b_standard_benchmark.json`
-- `results/gpt_oss_20b_moe_only_benchmark.json`
-- `results/gpt_oss_20b_mxfp4_benchmark.json`
+- **GPT-OSS-20B**: `results/gpt_oss_20b_*_benchmark.json`
+- **Llama-4-Scout**: `results/llama4_scout_17b_fp4_*_benchmark.json`
 
 ## Service Endpoints
 

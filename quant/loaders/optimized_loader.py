@@ -81,10 +81,15 @@ class OptimizedModelLoader:
         """Load model with appropriate optimizations"""
         model_kwargs = {
             "cache_dir": self.cache_dir,
-            "trust_remote_code": True,
+            "trust_remote_code": self.optimization_config.get("trust_remote_code", True),
             "torch_dtype": self.optimization_config.get("torch_dtype", "auto"),
             "device_map": self.optimization_config.get("device_map", "auto")
         }
+        
+        # Add memory optimization for large models
+        if self.optimization_config.get("low_cpu_mem_usage", False):
+            logger.info("💾 Enabling low CPU memory usage optimization")
+            model_kwargs["low_cpu_mem_usage"] = True
         
         # Add MegaBlocks MoE optimization if compatible
         if self.optimization_config.get("use_megablocks_moe", False):
@@ -95,6 +100,11 @@ class OptimizedModelLoader:
         if self.optimization_config.get("use_flash_attention_3", False):
             logger.info("⚡ Enabling Flash Attention 3 with attention sinks")
             model_kwargs["attn_implementation"] = "kernels-community/vllm-flash-attn3"
+        
+        # Special handling for pre-quantized models
+        if "fp4" in self.model_name.lower() or "int4" in self.model_name.lower():
+            logger.info("🎯 Detected pre-quantized model - optimizing for quantized weights")
+            # Pre-quantized models may need specific handling
         
         # Load model
         logger.info(f"Loading model with configuration: {model_kwargs}")

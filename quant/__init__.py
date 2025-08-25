@@ -163,21 +163,13 @@ class Quant(BaseQuant):
         """Run the complete quantization pipeline"""
         logger.info("Starting quantization pipeline...")
         
-        loader_type = self.model_config.get('loader_type', 'quantizer')
+        # Step 1: Convert model
+        logger.info("Converting model...")
+        self.converter.convert()
         
-        if loader_type == 'optimized_loader':
-            # Direct model loading with optimizations
-            logger.info("Loading model with optimizations...")
-            self.quantizer.load_model()
-        else:
-            # Traditional quantization pipeline
-            # Step 1: Convert model
-            logger.info("Converting model...")
-            self.converter.convert()
-            
-            # Step 2: Quantize model
-            logger.info("Quantizing model...")
-            self.quantizer.quantize(self.converter.output_path)
+        # Step 2: Quantize model
+        logger.info("Quantizing model...")
+        self.quantizer.quantize(self.converter.output_path)
         
         # Step 3: Start interface (if needed)
         if self.client is not None:

@@ -1,0 +1,45 @@
+interface:
+  type: server_openai
+  host: "0.0.0.0"
+  port: 6001
+  
+model:
+  model_name: "nvidia/Llama-4-Scout-17B-16E-Instruct-FP4"
+  cache_dir: "./model_cache"
+  max_batch_size: 1
+  
+  # Optimized loader configuration for pre-quantized model
+  loader_type: optimized_loader
+  optimizations:
+    # Pre-quantized model - no additional quantization needed
+    use_mxfp4: false  # Already quantized to FP4
+    use_flash_attention_3: true   # Enable if GPU supports it
+    use_megablocks_moe: true      # MoE architecture benefits from this
+    use_kernels: true
+    torch_dtype: "auto"           # Let the model determine optimal dtype
+    device_map: "auto"
+    
+    # Model-specific optimizations
+    trust_remote_code: true
+    low_cpu_mem_usage: true
+
+generation:
+  max_new_tokens: 100
+  temperature: 0.7
+  top_k: 50
+  max_length: 4096  # Can handle up to 1M tokens but start conservative
+
+client:
+  type: speed_benchmark
+  dataset: "dataset/speed_benchmark.json"
+  output: "results/llama4_scout_17b_fp4_benchmark.json"
+  num_requests: 50   # Conservative for large model
+  concurrent_requests: 1
+  warmup_requests: 3
+  
+benchmark_metadata:
+  model_variant: "llama-4-scout-17b-16e-instruct-fp4"
+  optimization_type: "pre_quantized_fp4_with_moe"
+  description: "NVIDIA Llama-4-Scout 17B pre-quantized FP4 with MoE kernels"
+  expected_performance: "Efficient inference on single H100 or similar GPU"
+  memory_requirements: "Reduced due to FP4 quantization"

@@ -1,0 +1,45 @@
+interface:
+  type: server_openai
+  host: "0.0.0.0"
+  port: 6001
+  
+model:
+  model_name: "nvidia/Llama-4-Scout-17B-16E-Instruct-FP4"
+  cache_dir: "./model_cache"
+  max_batch_size: 1
+  
+  # Optimized loader configuration for long context testing
+  loader_type: optimized_loader
+  optimizations:
+    # Pre-quantized model optimized for long context
+    use_mxfp4: false  # Already quantized to FP4
+    use_flash_attention_3: true   # Critical for long context
+    use_megablocks_moe: true      # MoE architecture
+    use_kernels: true
+    torch_dtype: "auto"
+    device_map: "auto"
+    
+    # Long context specific optimizations
+    trust_remote_code: true
+    low_cpu_mem_usage: true
+
+generation:
+  max_new_tokens: 200
+  temperature: 0.7
+  top_k: 50
+  max_length: 32768  # Test longer context handling
+
+client:
+  type: speed_benchmark
+  dataset: "dataset/speed_benchmark.json"
+  output: "results/llama4_scout_17b_fp4_long_context_benchmark.json"
+  num_requests: 20   # Fewer requests for long context testing
+  concurrent_requests: 1
+  warmup_requests: 2
+  
+benchmark_metadata:
+  model_variant: "llama-4-scout-17b-16e-instruct-fp4"
+  optimization_type: "pre_quantized_fp4_long_context"
+  description: "NVIDIA Llama-4-Scout 17B FP4 with extended context length testing"
+  expected_performance: "Long context handling up to 1M tokens (testing 32K)"
+  memory_requirements: "Optimized for single H100 with long context"
