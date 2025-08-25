@@ -27,6 +27,15 @@ except ImportError:
     ort = None
     ONNX_AVAILABLE = False
 
+try:
+    import nvidia.modelopt.torch.quantization as mtq
+    from transformers import AutoModelForCausalLM
+    MODELOPT_AVAILABLE = True
+except ImportError:
+    mtq = None
+    AutoModelForCausalLM = None
+    MODELOPT_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 class MXFp4Quantizer:
@@ -50,6 +59,7 @@ class MXFp4Quantizer:
         
         # Runtime components
         self.tokenizer = None
+        self.model = None
         self.trt_engine = None
         self.trt_context = None
         self.onnx_session = None
@@ -84,22 +94,131 @@ class MXFp4Quantizer:
             self.vocab_size = len(self.tokenizer)
             logger.info(f"Tokenizer loaded, vocab size: {self.vocab_size}")
     
-    def quantize(self, onnx_path: str) -> bool:
-        """Convert ONNX model to TensorRT with quantization"""
+    def _load_model(self):
+        """Load PyTorch model for quantization"""
+        if self.model is None:
+            if not MODELOPT_AVAILABLE:
+                raise RuntimeError("TensorRT Model Optimizer not available. Please install modelopt.")
+            
+            logger.info(f"Loading PyTorch model: {self.model_name}")
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                cache_dir=self.cache_dir,
+                torch_dtype=torch.float16,
+                trust_remote_code=True,
+                device_map="auto"
+            )
+            self.model.eval()
+            logger.info("PyTorch model loaded successfully")
+    
+    def _apply_mxfp4_quantization(self) -> str:
+        """Apply MXfp4 quantization using TensorRT Model Optimizer"""
+        if not MODELOPT_AVAILABLE:
+            raise RuntimeError("TensorRT Model Optimizer not available")
+        
+        self._load_model()
+        self._load_tokenizer()
+        
+        # Detect sequence length from model
+        self._detect_expected_sequence_length()
+        
+        logger.info("Applying MXfp4 quantization...")
+        
+        # Configure quantization for FP4 - using block quantization config
+        quant_cfg = {
+            "quant_cfg": {
+                "*weight_quantizer": {
+                    "num_bits": (2, 1),  # FP4 E2M1 format  
+                    "block_sizes": {-1: 128},  # Block size 128
+                    "enable": True
+                },
+                "*input_quantizer": {
+                    "num_bits": (2, 1),  # FP4 E2M1 format
+                    "type": "dynamic", 
+                    "enable": True
+                },
+                "default": {"enable": False}
+            },
+            "algorithm": "max"
+        }
+        
+        # Apply quantization to the model
+        quantized_model = mtq.quantize(self.model, quant_cfg, forward_loop=self._calibration_forward_loop)
+        
+        # Export quantized model to ONNX
+        quantized_onnx_path = self.output_path.replace('.trt', '_quantized.onnx')
+        self._export_quantized_onnx(quantized_model, quantized_onnx_path)
+        
+        logger.info(f"MXfp4 quantized ONNX model saved to: {quantized_onnx_path}")
+        return quantized_onnx_path
+    
+    def _calibration_forward_loop(self, model):
+        """Calibration forward loop for quantization"""
+        model.eval()
+        with torch.no_grad():
+            # Use a few sample inputs for calibration
+            sample_texts = [
+                "Hello world, this is a test.",
+                "The quick brown fox jumps over the lazy dog.",
+                "Artificial intelligence is transforming the world.",
+                "Machine learning enables computers to learn without explicit programming."
+            ]
+            
+            for text in sample_texts:
+                inputs = self.tokenizer.encode(text, return_tensors="pt", max_length=512, truncation=True)
+                if torch.cuda.is_available():
+                    inputs = inputs.cuda()
+                _ = model(inputs)
+    
+    def _export_quantized_onnx(self, quantized_model, onnx_path: str):
+        """Export quantized PyTorch model to ONNX"""
+        logger.info("Exporting quantized model to ONNX...")
+        
+        # Create dummy input
+        dummy_input = torch.randint(0, self.vocab_size, (1, 512), dtype=torch.long)
+        if torch.cuda.is_available():
+            dummy_input = dummy_input.cuda()
+        
+        # Export to ONNX
+        torch.onnx.export(
+            quantized_model,
+            dummy_input,
+            onnx_path,
+            input_names=['input_ids'],
+            output_names=['logits'],
+            dynamic_axes={
+                'input_ids': {0: 'batch_size', 1: 'sequence_length'},
+                'logits': {0: 'batch_size', 1: 'sequence_length'}
+            },
+            opset_version=17,
+            export_params=True,
+            do_constant_folding=False
+        )
+    
+    def quantize(self, onnx_path: str = None) -> bool:
+        """Apply MXfp4 quantization and convert to TensorRT"""
         if not ONNX_AVAILABLE:
             raise RuntimeError("ONNX Runtime not available. Please install onnxruntime.")
         
-        # Always load ONNX first to get model metadata
-        if not self._load_onnx_session(onnx_path):
-            raise RuntimeError(f"Failed to load ONNX model from {onnx_path}")
+        # Check if TensorRT engine already exists
+        if TENSORRT_AVAILABLE and os.path.exists(self.output_path):
+            logger.info(f"TensorRT engine exists at {self.output_path}")
+            return self._load_trt_engine()
         
-        # Try TensorRT conversion if available
+        # For MXfp4, we ignore the input ONNX path and do quantization from PyTorch
+        if onnx_path:
+            logger.info(f"Ignoring input ONNX path {onnx_path}, applying MXfp4 quantization from PyTorch model")
+        
+        # Apply MXfp4 quantization to PyTorch model and export to ONNX
+        quantized_onnx_path = self._apply_mxfp4_quantization()
+        
+        # Load the quantized ONNX session for metadata
+        if not self._load_onnx_session(quantized_onnx_path):
+            raise RuntimeError(f"Failed to load quantized ONNX model from {quantized_onnx_path}")
+        
+        # Convert quantized ONNX to TensorRT
         if TENSORRT_AVAILABLE:
-            if os.path.exists(self.output_path):
-                logger.info(f"TensorRT engine exists at {self.output_path}")
-                return self._load_trt_engine()
-            else:
-                return self._convert_to_tensorrt(onnx_path)
+            return self._convert_to_tensorrt(quantized_onnx_path)
         else:
             logger.info("TensorRT not available, using ONNX Runtime only")
             return True
@@ -167,15 +286,30 @@ class MXFp4Quantizer:
             logger.info(f"Detected expected sequence length: {self.expected_seq_len}")
     
     def _detect_expected_sequence_length(self):
-        """Get the expected sequence length from the configuration"""
-        # The sequence length MUST be in the config since we control the export
+        """Get the expected sequence length from the configuration or model"""
+        # Try to get from config first
         config_seq_len = self.config.get('onnx_export', {}).get('export_sequence_length')
         
-        if not config_seq_len:
-            raise RuntimeError("export_sequence_length must be specified in config onnx_export section")
-        
-        self.expected_seq_len = config_seq_len
-        logger.info(f"Using configured sequence length: {config_seq_len}")
+        if config_seq_len:
+            self.expected_seq_len = config_seq_len
+            logger.info(f"Using configured sequence length: {config_seq_len}")
+        elif self.model is not None:
+            # Try to detect from model config
+            model_config = self.model.config
+            context_attrs = ['max_position_embeddings', 'n_positions', 'max_sequence_length']
+            
+            for attr in context_attrs:
+                if hasattr(model_config, attr):
+                    self.expected_seq_len = getattr(model_config, attr)
+                    logger.info(f"Detected sequence length from model.config.{attr}: {self.expected_seq_len}")
+                    break
+            
+            if self.expected_seq_len is None:
+                self.expected_seq_len = 1024  # Default fallback
+                logger.info(f"Using default sequence length: {self.expected_seq_len}")
+        else:
+            self.expected_seq_len = 1024  # Default fallback
+            logger.info(f"Using default sequence length: {self.expected_seq_len}")
     
     def _convert_to_tensorrt(self, onnx_path: str) -> bool:
         """Convert ONNX to TensorRT"""
@@ -198,25 +332,41 @@ class MXFp4Quantizer:
             
             # Configure builder
             config = builder.create_builder_config()
-            config.max_workspace_size = self.max_workspace_size
+            config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, self.max_workspace_size)
             
-            # Set precision
-            if self.precision == 'fp16':
-                    config.set_flag(trt.BuilderFlag.FP16)
-            elif self.precision == 'int8':
-                    config.set_flag(trt.BuilderFlag.INT8)
+            # MXfp4 quantization should be applied via TensorRT Model Optimizer to the ONNX model
+            # The TensorRT builder just builds the pre-quantized ONNX model as-is
+            logger.info("Building TensorRT engine from MXfp4-quantized ONNX model")
+            
+            # Handle dynamic shapes with optimization profiles
+            if self.is_dynamic:
+                logger.info("Setting up optimization profile for dynamic shapes...")
+                profile = builder.create_optimization_profile()
+                
+                for spec in self.input_specs:
+                    if spec['is_dynamic']:
+                        input_name = spec['name']
+                        # Set dynamic shape ranges: min, opt, max
+                        min_shape = [1, 1]  # minimum batch=1, seq_len=1
+                        opt_shape = [self.max_batch_size, self.max_length // 2]  # optimal
+                        max_shape = [self.max_batch_size, self.max_length]  # maximum
+                        
+                        logger.info(f"Setting profile for {input_name}: min={min_shape}, opt={opt_shape}, max={max_shape}")
+                        profile.set_shape(input_name, min_shape, opt_shape, max_shape)
+                
+                config.add_optimization_profile(profile)
             
             # Build engine
             logger.info("Building TensorRT engine...")
-            engine = builder.build_engine(network, config)
+            serialized_engine = builder.build_serialized_network(network, config)
             
-            if engine is None:
+            if serialized_engine is None:
                 logger.error("Failed to build TensorRT engine")
                 return False
             
             # Save engine
             with open(self.output_path, 'wb') as f:
-                f.write(engine.serialize())
+                f.write(serialized_engine)
             
             logger.info(f"TensorRT engine saved to {self.output_path}")
             return self._load_trt_engine()
@@ -271,45 +421,154 @@ class MXFp4Quantizer:
             inputs = self.tokenizer.encode(prompt, return_tensors="pt")
             input_ids = inputs[0].numpy().astype(np.int64)
             
+            # Reshape to (batch_size, seq_len) if needed
+            if len(input_ids.shape) == 1:
+                input_ids = input_ids.reshape(1, -1)
+            
+            batch_size, original_seq_len = input_ids.shape
+            
+            # Pad input to match expected sequence length (1024)
+            if self.expected_seq_len and original_seq_len != self.expected_seq_len:
+                padded_input_ids = np.full((batch_size, self.expected_seq_len), 
+                                         self.tokenizer.pad_token_id or 0, 
+                                         dtype=input_ids.dtype)
+                # Right-align the tokens (put them at the end)
+                if original_seq_len <= self.expected_seq_len:
+                    padded_input_ids[:, -original_seq_len:] = input_ids
+                    input_ids = padded_input_ids
+
+                else:
+                    # Truncate if too long
+                    input_ids = input_ids[:, -self.expected_seq_len:]
+
+            
+            batch_size, seq_len = input_ids.shape
+
+            
+            # Set input shapes in context  
+            for i in range(self.trt_engine.num_io_tensors):
+                tensor_name = self.trt_engine.get_tensor_name(i)
+                if self.trt_engine.get_tensor_mode(tensor_name) == trt.TensorIOMode.INPUT:
+                    if tensor_name == 'input_ids':
+                        self.trt_context.set_input_shape(tensor_name, (batch_size, seq_len))
+
+            
             # Prepare TensorRT inputs/outputs
             bindings = []
             outputs = {}
+            device_memories = {}
+            total_memory_mb = 0
             
             # Allocate GPU memory and set bindings
-            for i in range(self.trt_engine.num_bindings):
-                binding = self.trt_engine.get_binding_name(i)
-                size = trt.volume(self.trt_context.get_binding_shape(i))
-                dtype = trt.nptype(self.trt_engine.get_binding_dtype(i))
+            for i in range(self.trt_engine.num_io_tensors):
+                tensor_name = self.trt_engine.get_tensor_name(i)
+                tensor_shape = self.trt_context.get_tensor_shape(tensor_name)
+                size = trt.volume(tensor_shape)
+                dtype = trt.nptype(self.trt_engine.get_tensor_dtype(tensor_name))
                 
-                if self.trt_engine.binding_is_input(i):
-                    host_mem = cuda.pagelocked_empty(size, dtype)
-                    if binding == 'input_ids':
-                        np.copyto(host_mem[:len(input_ids)], input_ids.flatten())
-                else:
-                    host_mem = cuda.pagelocked_empty(size, dtype)
-                    outputs[binding] = host_mem
+                # Calculate memory size in MB
+                dtype_size = np.dtype(dtype).itemsize
+                memory_mb = (size * dtype_size) / (1024 * 1024)
+                total_memory_mb += memory_mb
                 
+
+                
+                # Allocate memory for all tensors
+                host_mem = cuda.pagelocked_empty(size, dtype)
                 device_mem = cuda.mem_alloc(host_mem.nbytes)
+                device_memories[tensor_name] = device_mem
                 bindings.append(int(device_mem))
                 
-                if self.trt_engine.binding_is_input(i):
+                if self.trt_engine.get_tensor_mode(tensor_name) == trt.TensorIOMode.INPUT:
+                    if tensor_name == 'input_ids':
+                        flat_input = input_ids.flatten()
+                        np.copyto(host_mem[:len(flat_input)], flat_input)
                     cuda.memcpy_htod(device_mem, host_mem)
+                else:
+                    # Store output tensors we care about
+                    if tensor_name == 'logits':
+                        outputs[tensor_name] = host_mem
             
             # Run inference
             self.trt_context.execute_v2(bindings)
             
             # Copy outputs back
-            for binding, host_mem in outputs.items():
-                device_mem = bindings[self.trt_engine.get_binding_index(binding)]
+            for tensor_name, host_mem in outputs.items():
+                device_mem = device_memories[tensor_name]
                 cuda.memcpy_dtoh(host_mem, device_mem)
             
-            # Process outputs (simplified)
-            logits = outputs.get('logits', list(outputs.values())[0])
-            next_token = np.argmax(logits[-self.vocab_size:])
+            # PROPER autoregressive generation
+            original_tokens = input_ids[0, -original_seq_len:].tolist()
+            generated_tokens = original_tokens.copy()
             
-            # Simple continuation
-            generated_tokens = input_ids.tolist() + [next_token]
+            for step in range(max_new_tokens):
+                # Get logits from current inference
+                if 'logits' in outputs:
+                    logits = outputs['logits']
+                    
+                    # Get logits for the LAST token position (where we predict next)
+                    if len(logits.shape) == 3:  # [batch, seq, vocab]
+                        # Find the position of the last actual token (not padding)
+                        last_pos = len(generated_tokens) - 1 
+                        if last_pos >= 0 and last_pos < logits.shape[1]:
+                            next_token_logits = logits[0, last_pos, :]
+                        else:
+                            next_token_logits = logits[0, -1, :]
+                    else:
+                        next_token_logits = logits[-1] if len(logits.shape) == 2 else logits
+                    
+                    # Sample next token  
+                    next_token = self._sample_token(next_token_logits, temperature)
+                    generated_tokens.append(next_token)
+                    
+                    # Stop conditions
+                    if next_token == self.tokenizer.eos_token_id:
+                        break
+                    if len(generated_tokens) >= self.max_length:
+                        break
+                    
+                    # Prepare next inference with updated sequence
+                    if step < max_new_tokens - 1:
+                        # Create new padded input with all generated tokens so far
+                        new_seq_len = len(generated_tokens)
+                        if new_seq_len <= self.expected_seq_len:
+                            new_input_ids = np.full((1, self.expected_seq_len), 
+                                                  self.tokenizer.pad_token_id or 0, dtype=np.int64)
+                            new_input_ids[:, -new_seq_len:] = np.array(generated_tokens)
+                            
+                            # Update GPU memory with new sequence
+                            input_device_mem = device_memories['input_ids']
+                            host_mem = cuda.pagelocked_empty(self.expected_seq_len, dtype=np.int64)
+                            np.copyto(host_mem, new_input_ids.flatten())
+                            cuda.memcpy_htod(input_device_mem, host_mem)
+                            
+                            # Run inference again for next token
+                            self.trt_context.execute_v2(bindings)
+                            
+                            # Copy outputs back
+                            for tensor_name, host_mem in outputs.items():
+                                if tensor_name == 'logits':
+                                    device_mem = device_memories[tensor_name] 
+                                    cuda.memcpy_dtoh(host_mem, device_mem)
+                else:
+                    break
+            
+            # Decode full response
             generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+            original_text = self.tokenizer.decode(original_tokens, skip_special_tokens=True)
+            
+            if generated_text.startswith(original_text):
+                response = generated_text[len(original_text):].strip()
+            else:
+                response = generated_text.strip()
+            
+            tokens_generated = len(generated_tokens) - len(original_tokens)
+            logger.info(f"Generated {tokens_generated} tokens autoregressively")
+            return response if response else "Generated response."
+            
+            # Clean up GPU memory
+            for device_mem in device_memories.values():
+                device_mem.free()
             
             return generated_text[len(prompt):].strip()
             

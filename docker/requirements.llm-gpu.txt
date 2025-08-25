@@ -13,6 +13,7 @@ onnx>=1.14.0
 onnxruntime-gpu>=1.15.0
 
 # Note: TensorRT installed separately in Dockerfile based on CUDA version
+nvidia-modelopt>=0.22.0
 
 # Server dependencies
 fastapi>=0.100.0
@@ -33,6 +34,7 @@ Jinja2>=3.1.0
 
 # CUDA utilities
 nvidia-ml-py>=12.535.0
+pycuda>=2023.1
 
 # Optional: for better logging and progress bars
 tqdm>=4.65.0
