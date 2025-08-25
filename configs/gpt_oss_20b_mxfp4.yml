@@ -1,0 +1,53 @@
+interface:
+  type: server_openai
+  host: "0.0.0.0"
+  port: 6001
+  
+model:
+  model_name: "openai/gpt-oss-20b"
+  cache_dir: "./model_cache"
+  max_batch_size: 1
+  
+  # Optimized loader configuration
+  loader_type: optimized_loader
+  optimizations:
+    # Force mxfp4 for benchmarking (even though it's broken)
+    use_mxfp4: true
+    use_flash_attention_3: true  # Enable if GPU supports it
+    use_megablocks_moe: false    # Disable to isolate mxfp4 performance
+    torch_dtype: "auto"
+    device_map: "auto"
+  
+  conversion:
+    type: onnx
+    output_path: "./models/gpt_oss_20b_mxfp4.onnx"
+    onnx_export:
+      opset_version: 14
+      use_dynamic_axes: true
+      input_names: ["input_ids"]
+      output_names: ["logits"]
+      export_sequence_length: 2048
+    quantization:
+      type: trt_mxfp4
+      precision: fp4
+      output_path: "./models/gpt_oss_20b_mxfp4.trt"
+      max_workspace_size: 8589934592  # 8GB for larger model
+
+generation:
+  max_new_tokens: 100
+  temperature: 0.7
+  top_k: 50
+
+client:
+  type: speed_benchmark
+  dataset: "dataset/speed_benchmark.json"
+  output: "results/gpt_oss_20b_mxfp4_benchmark.json"
+  num_requests: 50   # Reduced for large model
+  concurrent_requests: 1
+  warmup_requests: 3
+  
+benchmark_metadata:
+  model_variant: "gpt-oss-20b"
+  optimization_type: "mxfp4"
+  description: "Benchmark of GPT-OSS-20B with mxfp4 quantization (currently broken)"
+  expected_issues: "mxfp4 quantization is currently broken - expect failures"

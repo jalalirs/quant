@@ -43,7 +43,33 @@ pip install tensorrt-cu11
 pip install tensorrt-cu12
 ```
 
+## Features
+
+### 🚀 GPU Optimization
+- **Automatic GPU detection** with compatibility checking
+- **mxfp4 quantization** for Ampere+ GPUs (RTX 30/40 series)
+- **Flash Attention 3** support for maximum performance
+- **MegaBlocks MoE kernels** for efficient MoE model inference
+
+### 📊 GPT-OSS-20B Benchmarking
+- Specialized benchmarks for `openai/gpt-oss-20b` model
+- Compare performance with and without mxfp4 quantization
+- MoE kernel optimization for speed improvements
+- Comprehensive statistics and failure analysis
+
 ## Usage
+
+### Quick Start with Docker (Recommended)
+
+```bash
+# Check GPU compatibility
+docker-compose --profile gpu-check up gpu-compatibility-check
+
+# Run GPT-OSS benchmarks
+docker-compose --profile gpt-oss-benchmark up gpt-oss-standard    # Best performance
+docker-compose --profile gpt-oss-benchmark up gpt-oss-moe-only   # MoE only
+docker-compose --profile gpt-oss-benchmark up gpt-oss-mxfp4      # mxfp4 (broken)
+```
 
 ### Basic Usage
 

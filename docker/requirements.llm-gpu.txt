@@ -43,3 +43,9 @@ huggingface_hub>=0.16.0
 
 # Accelerate for multi-GPU support
 accelerate>=0.20.0
+
+# MegaBlocks for MoE kernel optimization
+megablocks>=0.5.0
+
+# Flash Attention (if available)
+flash-attn>=2.0.0; sys_platform != "darwin"

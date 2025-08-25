@@ -38,6 +38,17 @@ docker-compose up
 docker-compose up dashboard        # Dashboard only
 docker-compose up llm-cpu         # CPU LLM pipeline  
 docker-compose up llm-gpu         # GPU LLM pipeline
+
+# GPU Compatibility Check
+docker-compose --profile gpu-check up gpu-compatibility-check
+
+# GPT-OSS-20B Benchmarking
+docker-compose --profile gpt-oss-benchmark up gpt-oss-standard    # MoE kernels (recommended)
+docker-compose --profile gpt-oss-benchmark up gpt-oss-moe-only   # MoE kernels only
+docker-compose --profile gpt-oss-benchmark up gpt-oss-mxfp4      # mxfp4 (expected to fail)
+
+# Run all GPT-OSS benchmarks sequentially
+docker-compose --profile gpt-oss-benchmark up
 ```
 
 ### Manual Docker Commands
@@ -46,7 +57,7 @@ docker-compose up llm-gpu         # GPU LLM pipeline
 ```bash
 # Build and run dashboard
 docker build -f docker/Dockerfile.dashboard -t quant-dashboard .
-docker run -v $(pwd)/results:/app/results -p 6001:6001 quant-dashboard
+docker run -v $(pwd)/results:/app/results -p 8080:8080 quant-dashboard
 ```
 
 #### CPU LLM Pipeline
@@ -82,11 +93,45 @@ cd docker
 ./build.sh --all --push --registry docker.io/myuser --tag v1.0
 ```
 
+## GPU Compatibility and Optimization
+
+### Automatic GPU Detection
+The system automatically detects your GPU capabilities and applies optimal settings:
+
+- **mxfp4 quantization**: Requires compute capability ≥ 8.0 (Ampere+)
+- **Flash Attention 3**: Requires compute capability ≥ 8.0 (Ampere+)
+- **MegaBlocks MoE**: Requires compute capability ≥ 7.0 (Volta+)
+
+### Check GPU Compatibility
+```bash
+# Check what optimizations your GPU supports
+docker-compose --profile gpu-check up gpu-compatibility-check
+```
+
+### GPT-OSS-20B Benchmarking
+We provide specialized benchmarks for the `openai/gpt-oss-20b` model:
+
+```bash
+# Recommended: MoE kernels with Flash Attention (if supported)
+docker-compose --profile gpt-oss-benchmark up gpt-oss-standard
+
+# Isolate MoE kernel performance
+docker-compose --profile gpt-oss-benchmark up gpt-oss-moe-only
+
+# Test mxfp4 (currently broken, will show failure statistics)
+docker-compose --profile gpt-oss-benchmark up gpt-oss-mxfp4
+```
+
+Results will be saved to:
+- `results/gpt_oss_20b_standard_benchmark.json`
+- `results/gpt_oss_20b_moe_only_benchmark.json`
+- `results/gpt_oss_20b_mxfp4_benchmark.json`
+
 ## Service Endpoints
 
 | Service | Port | Description |
 |---------|------|-------------|
-| Dashboard | 6001 | HTML dashboard generation |
+| Dashboard | 8080 | HTML dashboard generation |
 | LLM CPU | 6001 | OpenAI-compatible API (CPU) |
 | LLM GPU | 6002 | OpenAI-compatible API (GPU) |
 | File Server | 8082 | Static file serving for results |
@@ -147,7 +192,7 @@ services:
     build:
       dockerfile: docker/Dockerfile.dashboard
     ports:
-      - "6001:6001"
+      - "8080:8080"
     volumes:
       - ./results:/app/results
       - ./configs:/app/configs
@@ -204,7 +249,7 @@ spec:
       - name: dashboard
         image: quant-dashboard:latest
         ports:
-        - containerPort: 6001
+        - containerPort: 8080
         volumeMounts:
         - name: results
           mountPath: /app/results
@@ -228,7 +273,7 @@ services:
   dashboard:
     image: quant-dashboard:latest
     ports:
-      - "6001:6001"
+      - "8080:8080"
     volumes:
       - results:/app/results
     deploy:

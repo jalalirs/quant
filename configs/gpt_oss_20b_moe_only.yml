@@ -1,0 +1,39 @@
+interface:
+  type: server_openai
+  host: "0.0.0.0"
+  port: 6001
+  
+model:
+  model_name: "openai/gpt-oss-20b"
+  cache_dir: "./model_cache"
+  max_batch_size: 1
+  
+  # Optimized loader configuration - MoE kernels only
+  loader_type: optimized_loader
+  optimizations:
+    # Pure MoE kernel optimization
+    use_mxfp4: false
+    use_flash_attention_3: false  # Disable to isolate MoE performance
+    use_megablocks_moe: true
+    use_kernels: true
+    torch_dtype: "auto"
+    device_map: "auto"
+
+generation:
+  max_new_tokens: 100
+  temperature: 0.7
+  top_k: 50
+
+client:
+  type: speed_benchmark
+  dataset: "dataset/speed_benchmark.json"
+  output: "results/gpt_oss_20b_moe_only_benchmark.json"
+  num_requests: 50
+  concurrent_requests: 1
+  warmup_requests: 3
+  
+benchmark_metadata:
+  model_variant: "gpt-oss-20b"
+  optimization_type: "megablocks_moe_only"
+  description: "Benchmark of GPT-OSS-20B with only MegaBlocks MoE kernels"
+  purpose: "Isolate MoE kernel performance impact"

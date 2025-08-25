@@ -84,11 +84,21 @@ class ServerOpenAI:
                         media_type="text/plain"
                     )
                 else:
-                    response_text = self.quantizer.generate_text(
-                        prompt, 
-                        max_new_tokens=request.max_tokens,
-                        temperature=request.temperature
-                    )
+                    # Handle both traditional quantizer and optimized loader
+                    if hasattr(self.quantizer, 'generate_text'):
+                        response_text = self.quantizer.generate_text(
+                            prompt, 
+                            max_new_tokens=request.max_tokens,
+                            temperature=request.temperature
+                        )
+                    elif hasattr(self.quantizer, 'generate'):
+                        response_text = self.quantizer.generate(
+                            prompt,
+                            max_new_tokens=request.max_tokens,
+                            temperature=request.temperature
+                        )
+                    else:
+                        raise RuntimeError("Quantizer does not support text generation")
                     
                     return ChatCompletionResponse(
                         id=f"chatcmpl-{int(time.time())}",
@@ -128,11 +138,21 @@ class ServerOpenAI:
     
     async def _generate_stream(self, prompt: str, request: ChatCompletionRequest) -> AsyncGenerator[str, None]:
         """Generate streaming response"""
-        response_text = self.quantizer.generate_text(
-            prompt,
-            max_new_tokens=request.max_tokens,
-            temperature=request.temperature
-        )
+        # Handle both traditional quantizer and optimized loader
+        if hasattr(self.quantizer, 'generate_text'):
+            response_text = self.quantizer.generate_text(
+                prompt,
+                max_new_tokens=request.max_tokens,
+                temperature=request.temperature
+            )
+        elif hasattr(self.quantizer, 'generate'):
+            response_text = self.quantizer.generate(
+                prompt,
+                max_new_tokens=request.max_tokens,
+                temperature=request.temperature
+            )
+        else:
+            raise RuntimeError("Quantizer does not support text generation")
         
         # Simulate streaming by yielding chunks
         words = response_text.split()
