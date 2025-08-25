@@ -24,17 +24,8 @@ RUN pip install  -r requirements.txt
 
 # TensorRT is pre-installed in the base image
 
-# Create a script to install MegaBlocks at runtime (when CUDA is available)
-RUN echo '#!/bin/bash\n\
-if nvidia-smi > /dev/null 2>&1; then\n\
-    echo "CUDA detected, installing MegaBlocks with compatible PyTorch 2.7.0..."\n\
-    pip install megablocks==0.10.0\n\
-else\n\
-    echo "ERROR: No CUDA detected. GPU container requires NVIDIA runtime."\n\
-    exit 1\n\
-fi\n\
-exec "$@"' > /usr/local/bin/install-cuda-deps.sh && \
-chmod +x /usr/local/bin/install-cuda-deps.sh
+# Install MegaBlocks directly during build (CUDA is available in NVIDIA container)
+RUN pip install megablocks==0.10.0
 
 # Copy application files
 COPY quant/ quant/
@@ -53,8 +44,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 # Expose port for API server
 EXPOSE 6001
 
-# Use entrypoint to install CUDA dependencies at runtime
-ENTRYPOINT ["/usr/local/bin/install-cuda-deps.sh"]
+# No entrypoint needed - everything installed during build
 
 # Default command - GPU configuration
 CMD ["python", "quant.py", "--config", "configs/llama38_trt_mxfp4.yml"]
