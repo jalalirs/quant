@@ -12,8 +12,7 @@ tokenizers>=0.13.0
 onnx>=1.14.0
 onnxruntime-gpu>=1.15.0
 
-# Note: TensorRT installed separately in Dockerfile based on CUDA version
-nvidia-modelopt>=0.22.0
+# Note: TensorRT and related tools pre-installed in base image
 
 # Server dependencies
 fastapi>=0.100.0
@@ -32,9 +31,8 @@ packaging>=21.0
 # Dashboard dependencies
 Jinja2>=3.1.0
 
-# CUDA utilities
+# CUDA utilities - some may be pre-installed in TensorRT container
 nvidia-ml-py>=12.535.0
-pycuda>=2023.1
 
 # Optional: for better logging and progress bars
 tqdm>=4.65.0
@@ -47,7 +45,7 @@ huggingface_hub>=0.16.0
 accelerate>=0.20.0
 
 # Required for GPT-OSS-20B optimizations
+# Note: triton may be pre-installed in TensorRT container
 kernels>=0.1.0
-triton>=3.4.0
 
 # Note: MegaBlocks installed at runtime to ensure CUDA is available during compilation
