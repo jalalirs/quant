@@ -5,7 +5,7 @@
 torch>=2.0.0
 torchvision>=0.15.0
 torchaudio>=2.0.0
-transformers>=4.30.0
+transformers>=4.55.1
 tokenizers>=0.13.0
 
 # ONNX dependencies (GPU version)
@@ -44,8 +44,8 @@ huggingface_hub>=0.16.0
 # Accelerate for multi-GPU support
 accelerate>=0.20.0
 
-# MegaBlocks for MoE kernel optimization
-megablocks>=0.5.0
+# Required for GPT-OSS-20B optimizations
+kernels>=0.1.0
+triton>=3.4.0
 
-# Flash Attention (if available)
-flash-attn>=2.0.0; sys_platform != "darwin"
+# Note: MegaBlocks installed at runtime to ensure CUDA is available during compilation

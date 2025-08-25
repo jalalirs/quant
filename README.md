@@ -47,9 +47,10 @@ pip install tensorrt-cu12
 
 ### 🚀 GPU Optimization
 - **Automatic GPU detection** with compatibility checking
-- **mxfp4 quantization** for Ampere+ GPUs (RTX 30/40 series)
-- **Flash Attention 3** support for maximum performance
-- **MegaBlocks MoE kernels** for efficient MoE model inference
+- **mxfp4 quantization** for Ampere+ GPUs (RTX 30/40 series) - runs on 16GB VRAM
+- **Flash Attention 3** with attention sinks (Hopper+ cards, expanding soon)
+- **MegaBlocks MoE kernels** for efficient MoE model inference (~48GB VRAM)
+- **Fail-fast approach** - no fallbacks, clear error messages when requirements aren't met
 
 ### 📊 GPT-OSS-20B Benchmarking
 - Specialized benchmarks for `openai/gpt-oss-20b` model

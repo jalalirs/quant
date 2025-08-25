@@ -98,9 +98,11 @@ cd docker
 ### Automatic GPU Detection
 The system automatically detects your GPU capabilities and applies optimal settings:
 
-- **mxfp4 quantization**: Requires compute capability ≥ 8.0 (Ampere+)
-- **Flash Attention 3**: Requires compute capability ≥ 8.0 (Ampere+)
-- **MegaBlocks MoE**: Requires compute capability ≥ 7.0 (Volta+)
+- **mxfp4 quantization**: Requires compute capability ≥ 8.0 (Ampere+) - 16GB VRAM
+- **Flash Attention 3**: Currently tested on Hopper+ (H100, H200) - expanding soon
+- **MegaBlocks MoE**: Requires compute capability ≥ 7.0 (Volta+) - ~48GB VRAM
+
+**Note**: MegaBlocks is installed at runtime to ensure CUDA is available during compilation. If CUDA is not detected, the container will fail to start.
 
 ### Check GPU Compatibility
 ```bash

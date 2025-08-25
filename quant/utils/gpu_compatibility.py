@@ -99,12 +99,12 @@ class GPUCompatibilityChecker:
                 f"mxfp4 requires compute capability >= 8.0, got {device['compute_capability']}"
             )
         
-        # Check Flash Attention 3 compatibility (requires compute capability >= 8.0)
-        if device["major"] >= 8:
+        # Check Flash Attention 3 compatibility (Hopper cards for now, expanding soon)
+        if device["major"] >= 9:  # Hopper (H100, H200)
             device_report["flash_attention_3_compatible"] = True
         else:
             device_report["reasons"].append(
-                f"Flash Attention 3 requires compute capability >= 8.0, got {device['compute_capability']}"
+                f"Flash Attention 3 currently tested on Hopper+ (≥9.0), got {device['compute_capability']}"
             )
         
         # Check MegaBlocks MoE compatibility (more lenient, requires >= 7.0)
@@ -119,10 +119,11 @@ class GPUCompatibilityChecker:
     
     def _determine_optimization_strategy(self, report: Dict) -> str:
         """Determine the best optimization strategy"""
-        if report["mxfp4_compatible"] and report["flash_attention_3_compatible"]:
-            return "mxfp4_with_flash_attention"
-        elif report["mxfp4_compatible"]:
-            return "mxfp4_only"
+        if report["mxfp4_compatible"]:
+            if report["flash_attention_3_compatible"]:
+                return "mxfp4_with_flash_attention"
+            else:
+                return "mxfp4_only"
         elif report["megablocks_moe_compatible"]:
             return "megablocks_moe"
         else:
@@ -214,13 +215,13 @@ class GPUCompatibilityChecker:
         strategy = self.compatibility_report["recommended_optimization"]
         
         if strategy == "mxfp4_with_flash_attention":
-            print("🚀 Best performance: Use mxfp4 + Flash Attention 3")
+            print("🚀 Best performance: Use mxfp4 + Flash Attention 3 (16GB VRAM)")
         elif strategy == "mxfp4_only":
-            print("⚡ Good performance: Use mxfp4 quantization")
+            print("⚡ Good performance: Use mxfp4 quantization (16GB VRAM)")
         elif strategy == "megablocks_moe":
-            print("🔧 Alternative optimization: Use MegaBlocks MoE kernels")
+            print("🔧 Alternative optimization: Use MegaBlocks MoE kernels (~48GB VRAM)")
         else:
-            print("📊 Standard inference without advanced optimizations")
+            print("📊 Standard inference without advanced optimizations (~48GB VRAM)")
         
         if self.compatibility_report["warnings"]:
             print("\nWARNINGS:")

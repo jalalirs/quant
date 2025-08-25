@@ -91,6 +91,11 @@ class OptimizedModelLoader:
             logger.info("🔧 Enabling MegaBlocks MoE kernels for optimization")
             model_kwargs["use_kernels"] = True
         
+        # Add Flash Attention 3 with sinks if compatible
+        if self.optimization_config.get("use_flash_attention_3", False):
+            logger.info("⚡ Enabling Flash Attention 3 with attention sinks")
+            model_kwargs["attn_implementation"] = "kernels-community/vllm-flash-attn3"
+        
         # Load model
         logger.info(f"Loading model with configuration: {model_kwargs}")
         self.model = AutoModelForCausalLM.from_pretrained(

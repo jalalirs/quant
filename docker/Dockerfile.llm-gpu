@@ -31,6 +31,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install TensorRT for CUDA 12.1
 RUN pip install --no-cache-dir tensorrt-cu12
 
+# Create a script to install MegaBlocks at runtime (when CUDA is available)
+RUN echo '#!/bin/bash\n\
+if nvidia-smi > /dev/null 2>&1; then\n\
+    echo "CUDA detected, installing MegaBlocks..."\n\
+    pip install megablocks --no-cache-dir\n\
+else\n\
+    echo "ERROR: No CUDA detected. GPU container requires NVIDIA runtime."\n\
+    exit 1\n\
+fi\n\
+exec "$@"' > /usr/local/bin/install-cuda-deps.sh && \
+chmod +x /usr/local/bin/install-cuda-deps.sh
+
 # Copy application files
 COPY quant/ quant/
 COPY configs/ configs/
@@ -47,6 +59,9 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 # Expose port for API server
 EXPOSE 6001
+
+# Use entrypoint to install CUDA dependencies at runtime
+ENTRYPOINT ["/usr/local/bin/install-cuda-deps.sh"]
 
 # Default command - GPU configuration
 CMD ["python", "quant.py", "--config", "configs/llama38_trt_mxfp4.yml"]
