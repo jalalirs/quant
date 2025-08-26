@@ -22,9 +22,6 @@ else
     cd quant
 fi
 
-# Upgrade pip first
-echo "=== Upgrading pip ==="
-pip install --upgrade pip
 
 # Check pre-installed versions from TensorRT-LLM container
 echo "=== Pre-installed Software Versions ==="
@@ -33,14 +30,6 @@ python3 -c "import tensorrt; print(f'TensorRT version: {tensorrt.__version__}')"
 python3 -c "import triton; print(f'Triton version (pre-installed): {triton.__version__}')" || echo "Standard Triton not found"
 python3 -c "import sys; print(f'Python version: {sys.version}')"
 nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | head -1 | xargs -I {} echo "CUDA Driver version: {}"
-
-# Install Triton 3.4+ for MXFP4 support (critical upgrade)
-echo "=== Installing Triton 3.4+ for MXFP4 support ==="
-pip install "triton>=3.4" --upgrade --break-system-packages
-
-# Install kernels library for MXFP4 and Flash Attention 3
-echo "=== Installing kernels library ==="
-pip install --upgrade kernels --break-system-packages
 
 # Install requirements
 echo "=== Installing requirements ==="

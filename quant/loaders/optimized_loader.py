@@ -22,20 +22,37 @@ class OptimizedModelLoader:
         self.model_name = config.get('model_name')
         self.cache_dir = config.get('cache_dir', './model_cache')
         
-        # Check GPU compatibility
+        # Check GPU compatibility for reference only
         self.gpu_checker = GPUCompatibilityChecker()
-        self.optimization_config = self.gpu_checker.get_optimization_config()
         
-        # Override with user-specified settings if provided
+        # Start with user-specified settings as the primary configuration
         user_optimizations = config.get('optimizations', {})
+        self.optimization_config = {
+            "use_mxfp4": False,
+            "use_flash_attention_3": False,
+            "use_megablocks_moe": False,
+            "use_kernels": False,
+            "torch_dtype": "auto",
+            "device_map": "auto",
+            "trust_remote_code": True
+        }
+        
+        # Apply user optimizations (these take precedence)
         self.optimization_config.update(user_optimizations)
+        
+        # Only apply GPU compatibility recommendations if user didn't specify
+        if not user_optimizations:
+            gpu_config = self.gpu_checker.get_optimization_config()
+            self.optimization_config.update(gpu_config)
         
         # Model components
         self.model = None
         self.tokenizer = None
         
         logger.info(f"Initialized OptimizedModelLoader for {self.model_name}")
-        logger.info(f"Optimization strategy: {self.gpu_checker.compatibility_report['recommended_optimization']}")
+        logger.info(f"User optimization config: {user_optimizations}")
+        logger.info(f"Final optimization config: {self.optimization_config}")
+        logger.info(f"GPU recommended strategy: {self.gpu_checker.compatibility_report['recommended_optimization']}")
     
     @classmethod
     def load_from_dict(cls, config: Dict[str, Any]) -> 'OptimizedModelLoader':

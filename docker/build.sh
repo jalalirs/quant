@@ -223,7 +223,7 @@ docker images | grep quant | grep "$IMAGE_TAG"
 
 print_status "Usage examples:"
 if [[ "$BUILD_DASHBOARD" == "true" ]]; then
-    echo "  Dashboard:  docker run -v \$(pwd)/results:/app/results -p 6001:6001 ${REGISTRY}quant-dashboard:${IMAGE_TAG}"
+    echo "  Dashboard:  docker run -v \$(pwd)/results:/app/results -p 8080:8080 ${REGISTRY}quant-dashboard:${IMAGE_TAG}"
 fi
 if [[ "$BUILD_CPU" == "true" ]]; then
     echo "  CPU LLM:    docker run -v \$(pwd)/models:/app/models -p 6001:6001 ${REGISTRY}quant-llm-cpu:${IMAGE_TAG}"
