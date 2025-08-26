@@ -19,21 +19,6 @@ model:
     torch_dtype: "auto"
     device_map: "auto"
   
-  conversion:
-    type: onnx
-    output_path: "./models/gpt_oss_20b_standard.onnx"
-    onnx_export:
-      opset_version: 14
-      use_dynamic_axes: true
-      input_names: ["input_ids"]
-      output_names: ["logits"]
-      export_sequence_length: 2048
-    quantization:
-      type: standard
-      precision: fp16
-      output_path: "./models/gpt_oss_20b_standard.trt"
-      max_workspace_size: 8589934592  # 8GB for larger model
-
 generation:
   max_new_tokens: 100
   temperature: 0.7
@@ -42,7 +27,7 @@ generation:
 client:
   type: speed_benchmark
   dataset: "dataset/speed_benchmark.json"
-  output: "results/gpt_oss_20b_standard_benchmark.json"
+  output: "/tmp/benchmark_results/gpt_oss_20b_standard_benchmark.json"
   num_requests: 50   # Reduced for large model
   concurrent_requests: 1
   warmup_requests: 3
@@ -50,5 +35,5 @@ client:
 benchmark_metadata:
   model_variant: "gpt-oss-20b"
   optimization_type: "standard_with_moe"
-  description: "Benchmark of GPT-OSS-20B with MegaBlocks MoE kernels (no mxfp4)"
-  expected_performance: "Should work reliably with MoE optimization"
+  description: "Benchmark of GPT-OSS-20B with flash attention 3"
+  expected_performance: "Should work reliably with flash attention 3"

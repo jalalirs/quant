@@ -5,7 +5,7 @@ interface:
   
 model:
   model_name: "openai/gpt-oss-20b"
-  cache_dir: "./model_cache"
+  cache_dir: "./model_cache"  # Use /tmp for cache in Azure ML
   max_batch_size: 1
   
   # Optimized loader configuration
@@ -18,21 +18,6 @@ model:
     torch_dtype: "auto"
     device_map: "auto"
   
-  conversion:
-    type: onnx
-    output_path: "./models/gpt_oss_20b_mxfp4.onnx"
-    onnx_export:
-      opset_version: 14
-      use_dynamic_axes: true
-      input_names: ["input_ids"]
-      output_names: ["logits"]
-      export_sequence_length: 2048
-    quantization:
-      type: trt_mxfp4
-      precision: fp4
-      output_path: "./models/gpt_oss_20b_mxfp4.trt"
-      max_workspace_size: 8589934592  # 8GB for larger model
-
 generation:
   max_new_tokens: 100
   temperature: 0.7
@@ -41,7 +26,7 @@ generation:
 client:
   type: speed_benchmark
   dataset: "dataset/speed_benchmark.json"
-  output: "results/gpt_oss_20b_mxfp4_benchmark.json"
+  output: "/tmp/benchmark_results/gpt_oss_20b_mxfp4_benchmark.json"  # Use /tmp for results
   num_requests: 50   # Reduced for large model
   concurrent_requests: 1
   warmup_requests: 3
@@ -49,5 +34,5 @@ client:
 benchmark_metadata:
   model_variant: "gpt-oss-20b"
   optimization_type: "mxfp4"
-  description: "Benchmark of GPT-OSS-20B with mxfp4 quantization (currently broken)"
-  expected_issues: "mxfp4 quantization is currently broken - expect failures"
+  description: "Benchmark of GPT-OSS-20B with mxfp4 quantization"
+  expected_performance: "Should work reliably with flash attention 3 and mxfp4"
