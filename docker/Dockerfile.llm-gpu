@@ -1,7 +1,6 @@
 # Full-featured GPU-enabled LLM pipeline container
-# Includes CUDA, TensorRT, and all quantization capabilities
-
-FROM nvcr.io/nvidia/pytorch:25.02-py3
+# Optimized for MXFP4 and Flash Attention 3 with TensorRT-LLM base
+FROM nvcr.io/nvidia/tritonserver:25.06-trtllm-python-py3
 
 # Set PyTorch CUDA memory allocator to avoid fragmentation
 ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -9,33 +8,41 @@ ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # Set working directory
 WORKDIR /app
 
-# System dependencies already installed in NVIDIA PyTorch container
-
-# Python symlink already exists in TensorRT base image
-
-# Upgrade pip and check pre-installed packages
+# Upgrade pip first
 RUN pip install --upgrade pip
 
-# Check what's pre-installed in PyTorch container
-RUN python -c "import torch; print(f'PyTorch version: {torch.__version__}')" || echo "PyTorch not pre-installed"
-RUN python -c "import triton; print(f'Triton version: {triton.__version__}')" || echo "Triton not pre-installed"  
-RUN python -c "import tensorrt; print(f'TensorRT version: {tensorrt.__version__}')" || echo "TensorRT not pre-installed"
+# Check pre-installed versions from TensorRT-LLM container
+RUN echo "=== Pre-installed Software Versions ===" && \
+    python -c "import torch; print(f'PyTorch version: {torch.__version__}')" && \
+    python -c "import tensorrt; print(f'TensorRT version: {tensorrt.__version__}')" && \
+    python -c "import triton; print(f'Triton version (pre-installed): {triton.__version__}')" || echo "Standard Triton not found" && \
+    python -c "import sys; print(f'Python version: {sys.version}')" && \
+    nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | head -1 | xargs -I {} echo "CUDA Driver version: {}"
+
+# Install Triton 3.4+ for MXFP4 support (critical upgrade)
+RUN pip install "triton>=3.4" --upgrade
+
+# Install kernels library for MXFP4 and Flash Attention 3
+RUN pip install --upgrade kernels
 
 # Copy and install requirements
 COPY docker/requirements.llm-gpu.txt requirements.txt
 RUN pip install -r requirements.txt
 
-# Install MegaBlocks separately with --no-deps to avoid torch conflicts
-RUN pip install --no-deps megablocks==0.10.0
+# MegaBlocks not needed - H100/H200 use MXFP4 + Flash Attention 3 instead
+# MegaBlocks is only for older GPUs that don't support MXFP4
 
-# TensorRT is pre-installed in the base image
+# Verify MXFP4 and Flash Attention 3 readiness
+RUN echo "=== MXFP4 & Flash Attention 3 Verification ===" && \
+    python -c "import triton; print(f'Triton version (upgraded): {triton.__version__}')" && \
+    python -c "import kernels; print('Kernels library ready for MXFP4/Flash Attention 3')" && \
+    python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}'); print(f'GPU count: {torch.cuda.device_count()}')"
 
 # Copy application files
 COPY quant/ quant/
 COPY configs/ configs/
 COPY dataset/ dataset/
 COPY quant.py .
-
 
 # Create necessary directories
 RUN mkdir -p results models model_cache
@@ -48,9 +55,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 # Expose port for API server
 EXPOSE 6001
 
-# No entrypoint needed - everything installed during build
-
-# Default command - GPU configuration
+# Default command - GPU configuration with MXFP4 support
 CMD ["python", "quant.py", "--config", "configs/llama38_trt_mxfp4.yml"]
 
 # Health check
@@ -59,9 +64,11 @@ HEALTHCHECK --interval=60s --timeout=30s --start-period=300s --retries=3 \
 
 # Labels
 LABEL maintainer="quant-team"
-LABEL description="GPU-accelerated LLM quantization pipeline with TensorRT"
-LABEL version="1.0"
-LABEL usage="docker run --gpus all -p 6001:6001 -v $(pwd)/models:/app/models quant-llm-gpu"
+LABEL description="MXFP4 + Flash Attention 3 optimized LLM quantization pipeline with TensorRT-LLM"
+LABEL version="2.0"
+LABEL base_image="nvcr.io/nvidia/tritonserver:25.06-trtllm-python-py3"
+LABEL triton_version=">=3.4"
+LABEL usage="docker run --gpus all -p 6001:6001 -v $(pwd)/models:/app/models quant-llm-mxfp4"
 
 # Volumes for persistent data
 VOLUME ["/app/models", "/app/model_cache", "/app/results", "/app/configs"]

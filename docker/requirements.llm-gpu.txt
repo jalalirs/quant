@@ -1,17 +1,22 @@
-# Full GPU-enabled LLM pipeline requirements
-# Only includes packages NOT pre-installed in nvcr.io/nvidia/pytorch:25.02-py3
-
-# Pre-installed: torch 2.7.0a0, torchvision, pytorch-triton, tensorrt 10.8.0, onnx, numpy, transformer_engine 2.2, safetensors
+# MXFP4 + Flash Attention 3 optimized requirements
+# Base: nvcr.io/nvidia/tritonserver:25.06-trtllm-python-py3
+# Pre-installed: PyTorch 2.7.0a0, TensorRT 10.10.0.31, Python 3.12.3
 
 # Core ML dependencies - only missing packages
 transformers>=4.55.1
 tokenizers>=0.13.0
 
-# ONNX dependencies - onnx already pre-installed, add runtime
-onnxruntime-gpu>=1.15.0
+# Critical: Triton 3.4+ for MXFP4 support (installed in Dockerfile)
+# triton>=3.4
 
-# MegaBlocks dependencies (installed before MegaBlocks with --no-deps)
-stanford-stk
+# Critical: Kernels library for MXFP4 and Flash Attention 3 (installed in Dockerfile)  
+# kernels>=0.5.0
+
+# ONNX dependencies - onnx pre-installed in TensorRT-LLM container
+onnxruntime-gpu>=1.22.0
+
+# MegaBlocks dependencies - NOT NEEDED for H100/H200 with MXFP4
+# stanford-stk
 
 # Server dependencies
 fastapi>=0.100.0
@@ -29,21 +34,18 @@ packaging>=21.0
 # Dashboard dependencies
 Jinja2>=3.1.0
 
-# CUDA utilities - some may be pre-installed in TensorRT container
+# CUDA utilities - pre-installed in TensorRT-LLM container
 nvidia-ml-py>=12.535.0
 
-# Optional: for better logging and progress bars
+# Progress bars and logging
 tqdm>=4.65.0
 rich>=13.0.0
 
 # Hugging Face hub
 huggingface_hub>=0.16.0
 
-# Accelerate for multi-GPU support
+# Accelerate for multi-GPU support - may be pre-installed
 accelerate>=0.20.0
 
-# Required for GPT-OSS-20B optimizations
-# Note: triton pre-installed as pytorch-triton
-kernels>=0.1.0
-
-# Note: megablocks installed separately with --no-deps to avoid torch conflicts
+# Note: MegaBlocks NOT included - H100/H200 use MXFP4 + Flash Attention 3 instead
+# Note: triton and kernels installed in Dockerfile to ensure proper versions
