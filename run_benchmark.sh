@@ -24,10 +24,10 @@ fi
 
 # Check pre-installed versions from TensorRT-LLM container
 echo "=== Pre-installed Software Versions ==="
-python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
-python -c "import tensorrt; print(f'TensorRT version: {tensorrt.__version__}')"
-python -c "import triton; print(f'Triton version (pre-installed): {triton.__version__}')" || echo "Standard Triton not found"
-python -c "import sys; print(f'Python version: {sys.version}')"
+python3 -c "import torch; print(f'PyTorch version: {torch.__version__}')"
+python3 -c "import tensorrt; print(f'TensorRT version: {tensorrt.__version__}')"
+python3 -c "import triton; print(f'Triton version (pre-installed): {triton.__version__}')" || echo "Standard Triton not found"
+python3 -c "import sys; print(f'Python3 version: {sys.version}')"
 nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | head -1 | xargs -I {} echo "CUDA Driver version: {}"
 
 
@@ -39,18 +39,18 @@ pip install -r docker/requirements.llm-gpu.txt
 
 # Verify MXFP4 and Flash Attention 3 readiness
 echo "=== MXFP4 & Flash Attention 3 Verification ==="
-python -c "import triton; print(f'Triton version (upgraded): {triton.__version__}')"
-python -c "import kernels; print('Kernels library ready for MXFP4/Flash Attention 3')"
+python3 -c "import triton; print(f'Triton version (upgraded): {triton.__version__}')"
+python3 -c "import kernels; print('Kernels library ready for MXFP4/Flash Attention 3')"
 
 # Create necessary directories
 mkdir -p results models model_cache
 
-# Set Python path
-export PYTHONPATH=$(pwd)
+# Set Python3 path
+export PYTHON3PATH=$(pwd)
 
 # Verify GPU availability
 echo "=== GPU Verification ==="
-python -c "
+python3 -c "
 import torch
 print(f'CUDA available: {torch.cuda.is_available()}')
 if torch.cuda.is_available():
@@ -63,7 +63,7 @@ else:
 
 # Run the gpt-oss-mxfp4 benchmark
 echo "=== Running gpt-oss-mxfp4 Benchmark ==="
-python quant.py --config configs/gpt_oss_20b_mxfp4.yml --verbose
+python3 quant.py --config configs/gpt_oss_20b_mxfp4.yml --verbose
 
 echo "=== Benchmark Complete ==="
 echo "Results saved to: results/gpt_oss_20b_mxfp4_benchmark.json"
