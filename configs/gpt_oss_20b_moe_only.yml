@@ -15,7 +15,7 @@ model:
     use_mxfp4: false
     use_flash_attention_3: false  # Disable to isolate MoE performance
     use_megablocks_moe: true
-    use_kernels: true
+    use_kernels: false
     torch_dtype: "auto"
     device_map: "auto"
 

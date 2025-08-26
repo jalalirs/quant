@@ -13,7 +13,7 @@ model:
   optimizations:
     # Force mxfp4 for benchmarking (even though it's broken)
     use_mxfp4: true
-    use_flash_attention_2: true  # Downgrade to FA2 for CUDA compatibility
+    use_flash_attention_3: true
     use_megablocks_moe: false    # Disable to isolate mxfp4 performance
     torch_dtype: "auto"
     device_map: "auto"

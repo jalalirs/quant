@@ -13,9 +13,9 @@ model:
   optimizations:
     # Standard inference without mxfp4
     use_mxfp4: false
-    use_flash_attention_2: true   # Downgrade to FA2 for CUDA compatibility
-    use_megablocks_moe: true      # Enable MoE kernels for speed boost
-    use_kernels: true
+    use_flash_attention_3: true   # Downgrade to FA2 for CUDA compatibility
+    use_megablocks_moe: false      # Enable MoE kernels for speed boost
+    use_kernels: false
     torch_dtype: "auto"
     device_map: "auto"
   
