@@ -96,10 +96,18 @@ class OptimizedModelLoader:
             logger.info("🔧 Enabling MegaBlocks MoE kernels for optimization")
             model_kwargs["use_kernels"] = True
         
-        # Add Flash Attention 3 with sinks if compatible
+        # Add mxfp4 optimization if compatible
+        if self.optimization_config.get("use_mxfp4", False):
+            logger.info("🚀 Enabling mxfp4 quantization (use_kernels=False for quantized models)")
+            model_kwargs["use_kernels"] = False
+        
+        # Add Flash Attention optimization if compatible
         if self.optimization_config.get("use_flash_attention_3", False):
             logger.info("⚡ Enabling Flash Attention 3 with attention sinks")
             model_kwargs["attn_implementation"] = "kernels-community/vllm-flash-attn3"
+        elif self.optimization_config.get("use_flash_attention_2", False):
+            logger.info("⚡ Enabling Flash Attention 2")
+            model_kwargs["attn_implementation"] = "flash_attention_2"
         
         # Special handling for pre-quantized models
         if "fp4" in self.model_name.lower() or "int4" in self.model_name.lower():
@@ -119,7 +127,7 @@ class OptimizedModelLoader:
     def _apply_post_loading_optimizations(self):
         """Apply optimizations after model loading"""
         
-        # Flash Attention 3 (if available and compatible)
+        # Flash Attention (if available and compatible)
         if self.optimization_config.get("use_flash_attention_3", False):
             try:
                 logger.info("⚡ Attempting to enable Flash Attention 3")
@@ -128,16 +136,15 @@ class OptimizedModelLoader:
                 logger.info("Flash Attention 3 configuration applied")
             except Exception as e:
                 logger.warning(f"Failed to enable Flash Attention 3: {e}")
-        
-        # mxfp4 quantization (if compatible)
-        if self.optimization_config.get("use_mxfp4", False):
+        elif self.optimization_config.get("use_flash_attention_2", False):
             try:
-                logger.info("🚀 mxfp4 quantization is compatible but currently broken")
-                logger.info("Skipping mxfp4 for now - will be enabled when fixed")
-                # TODO: Enable when mxfp4 is working
-                # self._apply_mxfp4_quantization()
+                logger.info("⚡ Flash Attention 2 configuration applied")
+                # Flash Attention 2 is handled via attn_implementation parameter during model loading
+                logger.info("Flash Attention 2 enabled successfully")
             except Exception as e:
-                logger.warning(f"mxfp4 quantization failed: {e}")
+                logger.warning(f"Failed to enable Flash Attention 2: {e}")
+        
+        logger.info("Post-loading optimizations complete")
     
     def generate(self, prompt: str, max_new_tokens: int = 100, temperature: float = 0.7) -> str:
         """Generate text using the optimized model"""
@@ -203,7 +210,8 @@ class OptimizedModelLoader:
             "optimization_strategy": self.gpu_checker.compatibility_report["recommended_optimization"],
             "mxfp4_enabled": self.optimization_config.get("use_mxfp4", False),
             "megablocks_moe_enabled": self.optimization_config.get("use_megablocks_moe", False),
-            "flash_attention_enabled": self.optimization_config.get("use_flash_attention_3", False),
+            "flash_attention_3_enabled": self.optimization_config.get("use_flash_attention_3", False),
+            "flash_attention_2_enabled": self.optimization_config.get("use_flash_attention_2", False),
             "device_map": self.optimization_config.get("device_map"),
             "torch_dtype": self.optimization_config.get("torch_dtype")
         }

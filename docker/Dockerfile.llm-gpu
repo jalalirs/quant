@@ -1,7 +1,10 @@
 # Full-featured GPU-enabled LLM pipeline container
 # Includes CUDA, TensorRT, and all quantization capabilities
 
-FROM nvcr.io/nvidia/pytorch:24.12-py3
+FROM nvcr.io/nvidia/pytorch:25.02-py3
+
+# Set PyTorch CUDA memory allocator to avoid fragmentation
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # Set working directory
 WORKDIR /app
@@ -20,18 +23,19 @@ RUN python -c "import tensorrt; print(f'TensorRT version: {tensorrt.__version__}
 
 # Copy and install requirements
 COPY docker/requirements.llm-gpu.txt requirements.txt
-RUN pip install  -r requirements.txt
+RUN pip install -r requirements.txt
+
+# Install MegaBlocks separately with --no-deps to avoid torch conflicts
+RUN pip install --no-deps megablocks==0.10.0
 
 # TensorRT is pre-installed in the base image
-
-# Install MegaBlocks directly during build (CUDA is available in NVIDIA container)
-RUN pip install megablocks==0.10.0
 
 # Copy application files
 COPY quant/ quant/
 COPY configs/ configs/
 COPY dataset/ dataset/
 COPY quant.py .
+
 
 # Create necessary directories
 RUN mkdir -p results models model_cache

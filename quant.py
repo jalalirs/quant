@@ -15,6 +15,11 @@ from quant import BaseQuant
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Disable noisy debug logs from HTTP libraries
+logging.getLogger('httpcore').setLevel(logging.WARNING)
+logging.getLogger('httpx').setLevel(logging.WARNING)
+logging.getLogger('openai._base_client').setLevel(logging.INFO)
+
 def load_config(config_path: str) -> Dict[str, Any]:
     """Load configuration from YAML file"""
     with open(config_path, 'r') as f:

@@ -99,6 +99,13 @@ class Quant(BaseQuant):
     
     def _initialize_converter(self):
         """Initialize model converter"""
+        loader_type = self.model_config.get('loader_type', 'quantizer')
+        
+        # Skip converter initialization if using optimized_loader
+        if loader_type == 'optimized_loader':
+            self.converter = None
+            return
+            
         conversion_config = self.model_config.get('conversion', {})
         converter_type = conversion_config.get('type', 'onnx')
         
@@ -163,13 +170,21 @@ class Quant(BaseQuant):
         """Run the complete quantization pipeline"""
         logger.info("Starting quantization pipeline...")
         
-        # Step 1: Convert model
-        logger.info("Converting model...")
-        self.converter.convert()
+        loader_type = self.model_config.get('loader_type', 'quantizer')
         
-        # Step 2: Quantize model
-        logger.info("Quantizing model...")
-        self.quantizer.quantize(self.converter.output_path)
+        if loader_type == 'optimized_loader':
+            # Use optimized loader path - skip ONNX conversion
+            logger.info("Loading model with optimized loader...")
+            self.quantizer.load_model()
+        else:
+            # Traditional quantization pipeline with ONNX conversion
+            # Step 1: Convert model
+            logger.info("Converting model...")
+            self.converter.convert()
+            
+            # Step 2: Quantize model
+            logger.info("Quantizing model...")
+            self.quantizer.quantize(self.converter.output_path)
         
         # Step 3: Start interface (if needed)
         if self.client is not None:

@@ -8,20 +8,16 @@ dashboard:
   
   # Benchmark result files to include
   benchmark_files:
-    - path: "results/sample_llama38_mxfp4.json"
-      label: "Llama3-8B MXFP4"
+    - path: "results/gpt_oss_20b_mxfp4_benchmark.json"
+      label: "GPT-OSS-20B MXFP4"
       color: "#FF6B6B"
-      description: "Llama3 8B with MXFP4 quantization"
+      description: "GPT-OSS-20B with MXFP4 quantization"
       
-    - path: "results/sample_llama38_fp16.json"
-      label: "Llama3-8B FP16"
+    - path: "results/gpt_oss_20b_standard_benchmark.json"
+      label: "GPT-OSS-20B Standard"
       color: "#4ECDC4"
-      description: "Llama3 8B with FP16 precision"
-    
-    - path: "results/cpu_benchmark.json"
-      label: "GPT2 CPU"
-      color: "#4ECDC4"
-      description: "GPT2 with CPU"
+      description: "GPT-OSS-20B with standard precision"
+
 
   
   # Charts configuration
