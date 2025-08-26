@@ -1,0 +1,29 @@
+# GPU-enabled LLM environment for Azure ML
+# Optimized for MXFP4 and Flash Attention 3 with TensorRT-LLM base
+FROM nvcr.io/nvidia/tritonserver:25.06-trtllm-python-py3
+
+# Set PyTorch CUDA memory allocator to avoid fragmentation
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+# Set working directory
+WORKDIR /app
+
+# Check pre-installed versions from TensorRT-LLM container
+RUN echo "=== Pre-installed Software Versions ===" && \
+    python3 -c "import torch; print(f'PyTorch version: {torch.__version__}')" && \
+    python3 -c "import tensorrt; print(f'TensorRT version: {tensorrt.__version__}')" && \
+    python3 -c "import triton; print(f'Triton version (pre-installed): {triton.__version__}')" || echo "Standard Triton not found" && \
+    python3 -c "import sys; print(f'Python version: {sys.version}')" && \
+    nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | head -1 | xargs -I {} echo "CUDA Driver version: {}"
+
+# Install Triton 3.4+ for MXFP4 support (critical upgrade)
+RUN pip install "triton>=3.4" --upgrade --break-system-packages
+
+# Install kernels library for MXFP4 and Flash Attention 3
+RUN pip install --upgrade kernels --break-system-packages
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
