@@ -112,11 +112,13 @@ class OptimizedModelLoader:
         if self.optimization_config.get("use_megablocks_moe", False):
             logger.info("🔧 Enabling MegaBlocks MoE kernels for optimization")
             model_kwargs["use_kernels"] = True
+            self.optimization_config["use_kernels"] = True
         
         # Add mxfp4 optimization if compatible
         if self.optimization_config.get("use_mxfp4", False):
             logger.info("🚀 Enabling mxfp4 quantization with Triton kernels")
             model_kwargs["use_kernels"] = True  # Fixed: Enable kernels for MXFP4
+            self.optimization_config["use_kernels"] = True
                     
         # Add Flash Attention optimization if compatible
         if self.optimization_config.get("use_flash_attention_3", False):
