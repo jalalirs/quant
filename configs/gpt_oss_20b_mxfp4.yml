@@ -5,34 +5,39 @@ interface:
   
 model:
   model_name: "openai/gpt-oss-20b"
-  cache_dir: "./model_cache"  # Use /tmp for cache in Azure ML
+  cache_dir: "/tmp/model_cache"  # Use /tmp for cache in Azure ML
   max_batch_size: 1
   
   # Optimized loader configuration
   loader_type: optimized_loader
   optimizations:
-    # Force mxfp4 for benchmarking (even though it's broken)
+    # Force mxfp4 for benchmarking
     use_mxfp4: true
-    use_flash_attention_3: true
+    use_flash_attention_3: true  # Test Flash Attention 3
     use_megablocks_moe: false    # Disable to isolate mxfp4 performance
     torch_dtype: "auto"
     device_map: "auto"
   
-generation:
-  max_new_tokens: 100
-  temperature: 0.7
-  top_k: 50
+  conversion:
+    type: onnx
+    output_path: "/tmp/models/gpt_oss_20b_mxfp4.onnx"  # Use /tmp for intermediate files
+    onnx_export:
+      opset_version: 14
+      use_dynamic_axes: true
+      input_names: ["input_ids"]
+      output_names: ["logits"]
+      export_sequence_length: 2048
 
 client:
   type: speed_benchmark
-  dataset: "dataset/speed_benchmark.json"
-  output: "/tmp/benchmark_results/gpt_oss_20b_mxfp4_benchmark.json"  # Use /tmp for results
-  num_requests: 50   # Reduced for large model
+  num_requests: 50
   concurrent_requests: 1
-  warmup_requests: 3
-  
+  prompt_length: 100
+  max_tokens: 100
+  temperature: 0.0
+  output: "/tmp/benchmark_results/gpt_oss_20b_mxfp4_benchmark.json"
+
 benchmark_metadata:
   model_variant: "gpt-oss-20b"
-  optimization_type: "mxfp4"
   description: "Benchmark of GPT-OSS-20B with mxfp4 quantization"
   expected_performance: "Should work reliably with flash attention 3 and mxfp4"

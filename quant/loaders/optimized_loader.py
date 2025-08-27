@@ -115,9 +115,9 @@ class OptimizedModelLoader:
         
         # Add mxfp4 optimization if compatible
         if self.optimization_config.get("use_mxfp4", False):
-            logger.info("🚀 Enabling mxfp4 quantization (use_kernels=False for quantized models)")
-            model_kwargs["use_kernels"] = False
-        
+            logger.info("🚀 Enabling mxfp4 quantization with Triton kernels")
+            model_kwargs["use_kernels"] = True  # Fixed: Enable kernels for MXFP4
+                    
         # Add Flash Attention optimization if compatible
         if self.optimization_config.get("use_flash_attention_3", False):
             logger.info("⚡ Enabling Flash Attention 3 with attention sinks")
