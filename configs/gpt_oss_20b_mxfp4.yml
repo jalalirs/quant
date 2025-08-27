@@ -30,7 +30,7 @@ model:
 
 client:
   type: speed_benchmark
-  dataset: "dataset/speed_benchmark.json"
+  dataset: "/workspace/quant/dataset/speed_benchmark.json"
   num_requests: 50
   concurrent_requests: 1
   prompt_length: 100
