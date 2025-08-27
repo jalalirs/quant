@@ -116,11 +116,10 @@ class OptimizedModelLoader:
         
         # Add mxfp4 optimization if compatible
         if self.optimization_config.get("use_mxfp4", False):
-            logger.info("🚀 Enabling mxfp4 quantization")
-            # For pre-quantized models like GPT-OSS-20B, use_kernels=False is needed
-            # to actually use the quantized weights instead of dequantizing them
-            model_kwargs["use_kernels"] = False
-            self.optimization_config["use_kernels"] = False
+            logger.info("🚀 Enabling mxfp4 quantization with optimized kernels")
+            # Now that we have the right CUDA version, try using optimized kernels
+            model_kwargs["use_kernels"] = True
+            self.optimization_config["use_kernels"] = True
                     
         # Add Flash Attention optimization if compatible
         if self.optimization_config.get("use_flash_attention_3", False):
