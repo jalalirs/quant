@@ -16,6 +16,9 @@ RUN echo "=== Pre-installed Software Versions ===" && \
     python3 -c "import sys; print(f'Python version: {sys.version}')" && \
     nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | head -1 | xargs -I {} echo "CUDA Driver version: {}"
 
+# Upgrade to PyTorch 2.8 for kernel compatibility
+RUN pip install "torch>=2.8.0" "torchvision" "torchaudio" --index-url https://download.pytorch.org/whl/cu129 --break-system-packages
+
 # Upgrade Triton to 3.4+ for MXFP4 support
 RUN pip install "triton>=3.4" --upgrade --break-system-packages
 
@@ -26,4 +29,3 @@ RUN pip install --upgrade kernels --break-system-packages
 ENV PYTHONPATH=/app
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-

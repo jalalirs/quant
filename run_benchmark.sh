@@ -69,10 +69,14 @@ python3 quant.py --config configs/gpt_oss_20b_mxfp4.yml --verbose
 python3 quant.py --config configs/gpt_oss_20b_standard.yml --verbose
 python3 quant.py --config configs/gpt_oss_20b_moe_only.yml --verbose
 
-
-
 echo "=== Benchmark Complete ==="
 echo "Results saved to: /tmp/benchmark_results/gpt_oss_20b_mxfp4_benchmark.json"
+
+# Copy benchmark results to Azure Storage
+echo "=== Copying results to Azure Storage ==="
+#azcopy cp "/tmp/benchmark_results/*" "https://YOUR_STORAGE_ACCOUNT.blob.core.windows.net/YOUR_CONTAINER/benchmark_results/" --recursive=true
+
+echo "=== Results copied to Azure Storage ==="
 
 # Exit successfully
 exit 0
