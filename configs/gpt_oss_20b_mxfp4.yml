@@ -5,7 +5,7 @@ interface:
   
 model:
   model_name: "openai/gpt-oss-20b"
-  cache_dir: "/tmp/model_cache"  # Use /tmp for cache in Azure ML
+  cache_dir: "/workspace/quant/model_cache"  # Use /tmp for cache in Azure ML
   max_batch_size: 1
   
   # Optimized loader configuration
@@ -20,7 +20,7 @@ model:
   
   conversion:
     type: onnx
-    output_path: "/tmp/models/gpt_oss_20b_mxfp4.onnx"  # Use /tmp for intermediate files
+    output_path: "/workspace/quant/models/gpt_oss_20b_mxfp4.onnx"  # Use /tmp for intermediate files
     onnx_export:
       opset_version: 14
       use_dynamic_axes: true
@@ -35,7 +35,7 @@ client:
   prompt_length: 100
   max_tokens: 100
   temperature: 0.0
-  output: "/tmp/benchmark_results/gpt_oss_20b_mxfp4_benchmark.json"
+  output: "/workspace/quant/benchmark_results/gpt_oss_20b_mxfp4_benchmark.json"
 
 benchmark_metadata:
   model_variant: "gpt-oss-20b"
