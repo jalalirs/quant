@@ -13,10 +13,11 @@ dashboard:
       color: "#FF6B6B"
       description: "GPT-OSS-20B with MXFP4 quantization"
       
-    - path: "results/gpt_oss_20b_standard_benchmark.json"
+    - path: "results/gpt_oss_20b_mxfp4_benchmark_no_quant.json"
       label: "GPT-OSS-20B Standard"
       color: "#4ECDC4"
       description: "GPT-OSS-20B with standard precision"
+
 
 
   
